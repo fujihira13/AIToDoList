@@ -1,23 +1,39 @@
 # AIToDoList
 
-Python（FastAPI）で動くアイゼンハワーマトリクス TODO ボードのモックです。  
-ひとまずダミーデータを表示するだけですが、ブラウザから UI の雰囲気を確認できます。
+A FastAPI + vanilla JS implementation of the Eisenhower matrix board described in `要件定義書.md`.
 
-## 使い方
+## Features (v1 mock)
 
-1. 依存ライブラリをインストール
-   ```powershell
-   pip install -r requirements.txt
-   ```
-2. 開発サーバーを起動
-   ```powershell
-   uvicorn app.main:app --reload
-   ```
-3. ブラウザで `http://127.0.0.1:8000/` を開くと 4 象限ボードが表示されます。
+- File based persistence (`app/data/*.json`) for tasks and staff
+- Drag & drop between quadrants with instant API updates
+- Modal form for creating, editing, and deleting tasks
+- Staff roster with avatars under `app/static/avatars`
+- JSON API (FastAPI) for `/api/tasks` and `/api/staff`
 
-## ディレクトリ
+## Getting started
 
-- `app/main.py` : FastAPI アプリ本体（モックデータとエンドポイント定義）
-- `app/templates/index.html` : ボード画面のテンプレート
-- `app/static/style.css` : ボードのスタイル定義
-- `要件定義書.md` : 将来実装したい正式版の要件
+```powershell
+# create virtualenv if needed
+python -m venv .venv
+
+# activate (PowerShell)
+.\.venv\Scripts\activate
+
+# install deps
+pip install -r requirements.txt
+
+# run dev server
+uvicorn app.main:app --reload
+```
+
+Visit `http://127.0.0.1:8000/` in Chrome. The UI fetches data from the API and saves to the JSON files, so you can tweak tasks/staff there if needed.
+
+## Project layout
+
+- `app/main.py` – FastAPI app + template context
+- `app/repository.py` – tiny JSON repository for tasks/staff
+- `app/schemas.py` – Pydantic models for validation
+- `app/templates/index.html` – board UI markup
+- `app/static/style.css` / `app/static/app.js` – styling + UI logic
+- `app/data/tasks.json` / `staff.json` – mock data used by the repo
+- `要件定義書.md` – Japanese requirements document

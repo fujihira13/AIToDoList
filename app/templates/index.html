@@ -3,69 +3,145 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Eisenhower Board Mock</title>
+    <title>Eisenhower Board</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
     <header class="page-header">
       <div>
-        <p class="page-label">モック版</p>
-        <h1>アイゼンハワーマトリクス TODO ボード</h1>
-        <p class="page-sub">
-          ダミーデータで UI の雰囲気を確認できます。ドラッグ＆ドロップはまだ未実装です。
-        </p>
+        <p class="page-label">{{ copy.page_label }}</p>
+        <h1>{{ copy.page_title }}</h1>
+        <p class="page-sub">{{ copy.page_sub }}</p>
       </div>
-      <div class="tips">
-        <p>🚀 起動コマンド例</p>
-        <code>uvicorn app.main:app --reload</code>
+      <div class="header-actions">
+        <button type="button" class="btn btn--primary" id="addTaskBtn">
+          {{ copy.add_task }}
+        </button>
+        <div class="tips">
+          <p>{{ copy.hint_title }}</p>
+          <code>uvicorn app.main:app --reload</code>
+        </div>
       </div>
     </header>
-    <main class="board">
-      {% for quadrant in [1, 2, 3, 4] %}
-      <section class="board__quadrant">
-        <div class="quadrant__header">
-          <div>
-            <p class="quadrant__number">Q{{ quadrant }}</p>
-            <h2>{{ quadrant_labels[quadrant] }}</h2>
-          </div>
-          <span class="quadrant__count">{{ quadrants[quadrant]|length }}件</span>
+
+    <main class="layout">
+      <section class="board" id="board" aria-live="polite"></section>
+      <aside class="staff-panel">
+        <div class="staff-panel__header">
+          <h2>{{ copy.staff_title }}</h2>
+          <p>{{ copy.staff_sub }}</p>
         </div>
-        <div class="quadrant__body">
-          {% for task in quadrants[quadrant] %}
-          <article class="task-card">
-            <header class="task-card__header">
-              <span class="task-card__priority task-card__priority--{{ task.priority }}">
-                {{ task.priority }}
-              </span>
-              <span class="badge {{ status_colors.get(task.status, 'badge--todo') }}">
-                {{ task.status }}
-              </span>
-            </header>
-            <h3 class="task-card__title">{{ task.title }}</h3>
-            <dl class="task-card__meta">
-              <div>
-                <dt>担当</dt>
-                <dd>
-                  <span class="avatar" aria-hidden="true">{{ task.owner[0] }}</span>
-                  {{ task.owner }}（{{ task.department }}）
-                </dd>
-              </div>
-              <div>
-                <dt>期限</dt>
-                <dd>{{ task.due_date }}</dd>
-              </div>
-            </dl>
-          </article>
-          {% else %}
-          <p class="task-card task-card--empty">まだタスクがありません</p>
-          {% endfor %}
-        </div>
-      </section>
-      {% endfor %}
+        <div id="staffList" class="staff-list"></div>
+      </aside>
     </main>
+
+    <dialog id="taskDialog" class="modal">
+      <form id="taskForm" method="dialog">
+        <header class="modal__header">
+          <h2
+            id="taskFormTitle"
+            data-create-label="{{ copy.form_create }}"
+            data-edit-label="{{ copy.form_edit }}"
+          >
+            {{ copy.form_create }}
+          </h2>
+          <button type="button" class="btn btn--ghost" id="cancelTaskBtn">
+            {{ copy.cancel }}
+          </button>
+        </header>
+        <input type="hidden" name="task_id" id="task_id" />
+
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Title *</span>
+            <input type="text" name="title" id="title" maxlength="80" required />
+          </label>
+
+          <label class="form-field">
+            <span>Owner *</span>
+            <select name="owner_id" id="owner_id" required>
+              <option value="" disabled selected>--</option>
+              {% for person in staff %}
+              <option value="{{ person.id }}">{{ person.name }}</option>
+              {% endfor %}
+            </select>
+            <small id="ownerDept" class="helper-text"></small>
+          </label>
+
+          <label class="form-field">
+            <span>Status</span>
+            <select name="status" id="status">
+              {% for option in status_options %}
+              <option value="{{ option.value }}">{{ option.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Priority</span>
+            <select name="priority" id="priority">
+              {% for option in priority_options %}
+              <option value="{{ option.value }}">{{ option.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Quadrant</span>
+            <select name="quadrant" id="quadrant">
+              {% for quadrant in [1, 2, 3, 4] %}
+              <option value="{{ quadrant }}">Q{{ quadrant }} - {{ quadrant_labels[quadrant] }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="form-field">
+            <span>Due date</span>
+            <input type="date" name="due_date" id="due_date" />
+          </label>
+
+          <label class="form-field">
+            <span>Created by</span>
+            <input type="text" name="created_by" id="created_by" />
+          </label>
+        </div>
+
+        <label class="form-field">
+          <span>Description</span>
+          <textarea name="description" id="description" rows="4" maxlength="500"></textarea>
+        </label>
+
+        <footer class="modal__footer">
+          <span id="formStatus" class="form-status" role="status"></span>
+          <div class="modal__actions">
+            <button type="button" class="btn btn--danger" id="deleteTaskBtn">
+              {{ copy.delete_task }}
+            </button>
+            <button type="submit" class="btn btn--primary">{{ copy.save_task }}</button>
+          </div>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="confirmDialog" class="modal modal--confirm">
+      <div class="modal__body">
+        <p id="confirmMessage">{{ copy.confirm_delete }}</p>
+      </div>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" id="confirmCancelBtn">
+          {{ copy.cancel }}
+        </button>
+        <button type="button" class="btn btn--danger" id="confirmDeleteBtn">
+          {{ copy.confirm }}
+        </button>
+      </div>
+    </dialog>
+
     <footer class="page-footer">
-      <p>© 2025 Eisenhower Board Mock</p>
+      <p>{{ copy.footnote }}</p>
     </footer>
+
+    <script id="initial-data" type="application/json">{{ initial_payload | tojson }}</script>
+    <script src="/static/app.js" defer></script>
   </body>
 </html>
-
