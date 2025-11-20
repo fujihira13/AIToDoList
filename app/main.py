@@ -50,21 +50,21 @@ PRIORITY_OPTIONS = [
 ]
 
 COPY = {
-    "page_label": "Internal preview",
-    "page_title": "Eisenhower Matrix TODO Board",
-    "page_sub": "Drag tasks between quadrants, edit inline, and sync with the mock API.",
-    "add_task": "Add Task",
-    "hint_title": "Launch locally",
-    "staff_title": "Staff roster",
-    "staff_sub": "Manage faces from Django admin / JSON for now.",
-    "form_create": "Create task",
-    "form_edit": "Update task",
-    "delete_task": "Delete",
-    "save_task": "Save",
-    "cancel": "Cancel",
-    "confirm": "Delete",
-    "confirm_delete": "This action permanently removes the task. Continue?",
-    "footnote": "\u00a9 2025 Eisenhower Board Mock",
+    "page_label": "\u793e\u5185\u5411\u3051\u30d7\u30ec\u30d3\u30e5\u30fc",
+    "page_title": "\u30a2\u30a4\u30bc\u30f3\u30cf\u30ef\u30fc\u30de\u30c8\u30ea\u30af\u30b9TODO\u30dc\u30fc\u30c9",
+    "page_sub": "\u30bf\u30b9\u30af\u3092\u30c9\u30e9\u30c3\u30b0\u3067\u79fb\u52d5\u3057\u306a\u304c\u3089\u305d\u306e\u5834\u3067\u7de8\u96c6\u3057\u3001\u30e2\u30c3\u30afAPI\u3068\u540c\u671f\u3067\u304d\u307e\u3059\u3002",
+    "add_task": "\u30bf\u30b9\u30af\u3092\u8ffd\u52a0",
+    "hint_title": "\u30ed\u30fc\u30ab\u30eb\u3067\u8d77\u52d5",
+    "staff_title": "\u30e1\u30f3\u30d0\u30fc\u4e00\u89a7",
+    "staff_sub": "\u9854\u5199\u3084\u60c5\u5831\u306f\u5f53\u9762Django\u7ba1\u7406\u307e\u305f\u306fJSON\u3067\u5bfe\u5fdc\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+    "form_create": "\u30bf\u30b9\u30af\u3092\u4f5c\u6210",
+    "form_edit": "\u30bf\u30b9\u30af\u3092\u66f4\u65b0",
+    "delete_task": "\u524a\u9664",
+    "save_task": "\u4fdd\u5b58",
+    "cancel": "\u30ad\u30e3\u30f3\u30bb\u30eb",
+    "confirm": "\u524a\u9664",
+    "confirm_delete": "\u3053\u306e\u64cd\u4f5c\u3067\u30bf\u30b9\u30af\u304c\u5b8c\u5168\u306b\u524a\u9664\u3055\u308c\u307e\u3059\u3002\u7d9a\u884c\u3057\u307e\u3059\u304b\uff1f",
+    "footnote": "\u00a9 2025 Eisenhower Board Mock (\u793e\u5185\u7528)",
 }
 
 
@@ -92,10 +92,10 @@ async def render_board(request: Request) -> HTMLResponse:
     tasks = _serialized_tasks()
     staff = repo.list_staff()
     quadrant_faces = {
-        1: {"emoji": "\U0001F525", "caption": "Do now"},
-        2: {"emoji": "\U0001F9E0", "caption": "Plan it"},
-        3: {"emoji": "\u26A0", "caption": "Delegate"},
-        4: {"emoji": "\U0001F33F", "caption": "Eliminate/Relax"},
+        1: {"emoji": "\U0001F525", "caption": "\u4eca\u3059\u3050\u5bfe\u5fdc"},
+        2: {"emoji": "\U0001F9E0", "caption": "\u8a08\u753b\u7684\u306b\u9032\u3081\u308b"},
+        3: {"emoji": "\u26A0", "caption": "\u4ed6\u8005\u306b\u4efb\u305b\u308b"},
+        4: {"emoji": "\U0001F33F", "caption": "\u624b\u653e\u3057\u307e\u305f\u306f\u4f11\u3080"},
     }
     return templates.TemplateResponse(
         "index.html",

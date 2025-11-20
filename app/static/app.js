@@ -5,7 +5,7 @@
     try {
       initial = JSON.parse(dataScript.textContent || "{}");
     } catch (error) {
-      console.warn("Failed to parse initial payload", error);
+      console.warn("\u521d\u671f\u30c7\u30fc\u30bf\u306e\u89e3\u6790\u306b\u5931\u6557\u3057\u307e\u3057\u305f", error);
     }
   }
 
@@ -81,7 +81,7 @@
       const face = state.faces[quadrant] || {};
       header.innerHTML = `
         <div>
-          <p class="quadrant__number">Q${quadrant}</p>
+          <p class="quadrant__number">\u7b2c${quadrant}\u8c61\u9650</p>
           <h2>${state.labels[quadrant] || ""}</h2>
           <p class="quadrant__face">${face.emoji || ""} ${face.caption || ""}</p>
         </div>
@@ -94,12 +94,12 @@
       body.className = "quadrant__body";
 
       const tasks = state.tasks.filter((task) => task.quadrant === quadrant);
-      counter.textContent = `${tasks.length} items`;
+      counter.textContent = `${tasks.length} \u4ef6`;
 
       if (tasks.length === 0) {
         const empty = document.createElement("p");
         empty.className = "task-card task-card--empty";
-        empty.textContent = "No tasks yet";
+        empty.textContent = "\u30bf\u30b9\u30af\u306f\u307e\u3060\u3042\u308a\u307e\u305b\u3093";
         body.appendChild(empty);
       } else {
         sortTasks(tasks).forEach((task) => {
@@ -137,7 +137,7 @@
       <h3 class="task-card__title">${task.title}</h3>
       <dl class="task-card__meta">
         <div>
-          <dt>Owner</dt>
+          <dt>\u62c5\u5f53\u8005</dt>
           <dd>
             ${renderAvatar(owner)}
             ${owner ? owner.name : "-"}
@@ -145,7 +145,7 @@
           </dd>
         </div>
         <div>
-          <dt>Due</dt>
+          <dt>\u671f\u9650</dt>
           <dd>${formatDate(task.due_date)}</dd>
         </div>
       </dl>
@@ -190,7 +190,7 @@
     if (taskId) {
       const task = state.tasks.find((item) => item.id === taskId);
       if (!task) return;
-      formTitle.textContent = formTitle.dataset.editLabel || "Update task";
+      formTitle.textContent = formTitle.dataset.editLabel || "\u30bf\u30b9\u30af\u3092\u66f4\u65b0";
       form.task_id.value = task.id;
       form.title.value = task.title || "";
       form.description.value = task.description || "";
@@ -201,7 +201,7 @@
       form.quadrant.value = task.quadrant || 1;
       form.due_date.value = task.due_date || "";
     } else {
-      formTitle.textContent = formTitle.dataset.createLabel || "Create task";
+      formTitle.textContent = formTitle.dataset.createLabel || "\u30bf\u30b9\u30af\u3092\u4f5c\u6210";
       form.reset();
       editingId = null;
     }
@@ -243,11 +243,11 @@
       quadrant: Number(form.quadrant.value),
     };
     if (!payload.title) {
-      resetFormStatus("Title is required");
+      resetFormStatus("\u30bf\u30a4\u30c8\u30eb\u306f\u5fc5\u9808\u3067\u3059");
       return;
     }
     if (!payload.owner_id) {
-      resetFormStatus("Owner is required");
+      resetFormStatus("\u62c5\u5f53\u8005\u306f\u5fc5\u9808\u3067\u3059");
       return;
     }
     const url = editingId ? `/api/tasks/${editingId}` : "/api/tasks";
@@ -265,7 +265,7 @@
       renderBoard();
       closeForm();
     } catch (error) {
-      resetFormStatus(error.message || "Failed to save");
+      resetFormStatus(error.message || "\u4fdd\u5b58\u306b\u5931\u6557\u3057\u307e\u3057\u305f");
     }
   }
 
@@ -276,7 +276,7 @@
       ownerDept.textContent = "";
       return;
     }
-    ownerDept.textContent = staff.department ? `Dept: ${staff.department}` : "";
+    ownerDept.textContent = staff.department ? `\u6240\u5c5e: ${staff.department}` : "";
   }
 
   function confirmDelete(taskId) {
@@ -306,7 +306,7 @@
       closeConfirm();
       closeForm();
     } catch (error) {
-      resetFormStatus(error.message || "Failed to delete");
+      resetFormStatus(error.message || "\u524a\u9664\u306b\u5931\u6557\u3057\u307e\u3057\u305f");
       closeConfirm();
     }
   }
@@ -320,7 +320,7 @@
       state.tasks = state.tasks.map((task) => (task.id === data.id ? data : task));
       renderBoard();
     } catch (error) {
-      resetFormStatus(error.message || "Failed to move task");
+      resetFormStatus(error.message || "\u30bf\u30b9\u30af\u306e\u79fb\u52d5\u306b\u5931\u6557\u3057\u307e\u3057\u305f");
     }
   }
 
@@ -330,7 +330,7 @@
       ...options,
     });
     if (!response.ok) {
-      let message = "Request failed";
+      let message = "\u30ea\u30af\u30a8\u30b9\u30c8\u306b\u5931\u6557\u3057\u307e\u3057\u305f";
       try {
         const payload = await response.json();
         if (typeof payload.detail === "string") message = payload.detail;

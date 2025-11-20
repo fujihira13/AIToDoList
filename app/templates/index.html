@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Eisenhower Board</title>
+    <title>\u30a2\u30a4\u30bc\u30f3\u30cf\u30ef\u30fc\u30dc\u30fc\u30c9</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
@@ -53,12 +53,12 @@
 
         <div class="form-grid">
           <label class="form-field">
-            <span>Title *</span>
+            <span>\u30bf\u30a4\u30c8\u30eb *</span>
             <input type="text" name="title" id="title" maxlength="80" required />
           </label>
 
           <label class="form-field">
-            <span>Owner *</span>
+            <span>\u62c5\u5f53\u8005 *</span>
             <select name="owner_id" id="owner_id" required>
               <option value="" disabled selected>--</option>
               {% for person in staff %}
@@ -69,7 +69,7 @@
           </label>
 
           <label class="form-field">
-            <span>Status</span>
+            <span>\u30b9\u30c6\u30fc\u30bf\u30b9</span>
             <select name="status" id="status">
               {% for option in status_options %}
               <option value="{{ option.value }}">{{ option.label }}</option>
@@ -78,7 +78,7 @@
           </label>
 
           <label class="form-field">
-            <span>Priority</span>
+            <span>\u512a\u5148\u5ea6</span>
             <select name="priority" id="priority">
               {% for option in priority_options %}
               <option value="{{ option.value }}">{{ option.label }}</option>
@@ -87,27 +87,27 @@
           </label>
 
           <label class="form-field">
-            <span>Quadrant</span>
+            <span>\u8c61\u9650</span>
             <select name="quadrant" id="quadrant">
               {% for quadrant in [1, 2, 3, 4] %}
-              <option value="{{ quadrant }}">Q{{ quadrant }} - {{ quadrant_labels[quadrant] }}</option>
+              <option value="{{ quadrant }}">\u7b2c{{ quadrant }}\u8c61\u9650 - {{ quadrant_labels[quadrant] }}</option>
               {% endfor %}
             </select>
           </label>
 
           <label class="form-field">
-            <span>Due date</span>
+            <span>\u671f\u9650</span>
             <input type="date" name="due_date" id="due_date" />
           </label>
 
           <label class="form-field">
-            <span>Created by</span>
+            <span>\u4f5c\u6210\u8005</span>
             <input type="text" name="created_by" id="created_by" />
           </label>
         </div>
 
         <label class="form-field">
-          <span>Description</span>
+          <span>\u8a73\u7d30</span>
           <textarea name="description" id="description" rows="4" maxlength="500"></textarea>
         </label>
 
