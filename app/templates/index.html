@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>\u30a2\u30a4\u30bc\u30f3\u30cf\u30ef\u30fc\u30dc\u30fc\u30c9</title>
+    <title>アイゼンハワーボード</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
@@ -38,13 +38,16 @@
     <dialog id="taskDialog" class="modal">
       <form id="taskForm" method="dialog">
         <header class="modal__header">
-          <h2
-            id="taskFormTitle"
-            data-create-label="{{ copy.form_create }}"
-            data-edit-label="{{ copy.form_edit }}"
-          >
-            {{ copy.form_create }}
-          </h2>
+          <div>
+            <h2
+              id="taskFormTitle"
+              data-create-label="{{ copy.form_create }}"
+              data-edit-label="{{ copy.form_edit }}"
+            >
+              {{ copy.form_create }}
+            </h2>
+            <p class="modal__description">各項目を入力してタスクを作成してください。*マークが付いている項目は必須です。</p>
+          </div>
           <button type="button" class="btn btn--ghost" id="cancelTaskBtn">
             {{ copy.cancel }}
           </button>
@@ -53,62 +56,70 @@
 
         <div class="form-grid">
           <label class="form-field">
-            <span>\u30bf\u30a4\u30c8\u30eb *</span>
-            <input type="text" name="title" id="title" maxlength="80" required />
+            <span>タイトル *</span>
+            <input type="text" name="title" id="title" maxlength="80" required placeholder="タスクの名前を入力してください" />
+            <small class="helper-text">タスクの名前を入力してください。最大80文字。</small>
           </label>
 
           <label class="form-field">
-            <span>\u62c5\u5f53\u8005 *</span>
+            <span>担当者 *</span>
             <select name="owner_id" id="owner_id" required>
-              <option value="" disabled selected>--</option>
+              <option value="" disabled selected>-- 選択してください --</option>
               {% for person in staff %}
               <option value="{{ person.id }}">{{ person.name }}</option>
               {% endfor %}
             </select>
+            <small class="helper-text">このタスクを担当する人を選択してください。</small>
             <small id="ownerDept" class="helper-text"></small>
           </label>
 
           <label class="form-field">
-            <span>\u30b9\u30c6\u30fc\u30bf\u30b9</span>
+            <span>ステータス</span>
             <select name="status" id="status">
               {% for option in status_options %}
               <option value="{{ option.value }}">{{ option.label }}</option>
               {% endfor %}
             </select>
+            <small class="helper-text">タスクの進捗状況を選択してください。</small>
           </label>
 
           <label class="form-field">
-            <span>\u512a\u5148\u5ea6</span>
+            <span>優先度</span>
             <select name="priority" id="priority">
               {% for option in priority_options %}
               <option value="{{ option.value }}">{{ option.label }}</option>
               {% endfor %}
             </select>
+            <small class="helper-text">タスクの優先度を選択してください。高、中、低から選択します。</small>
           </label>
 
           <label class="form-field">
-            <span>\u8c61\u9650</span>
+            <span>象限 *</span>
             <select name="quadrant" id="quadrant">
               {% for quadrant in [1, 2, 3, 4] %}
-              <option value="{{ quadrant }}">\u7b2c{{ quadrant }}\u8c61\u9650 - {{ quadrant_labels[quadrant] }}</option>
+              <option value="{{ quadrant }}">第{{ quadrant }}象限　-　{{ quadrant_labels[quadrant] }}</option>
               {% endfor %}
             </select>
+            <small class="helper-text">アイゼンハワーマトリクスによる分類を選択してください。重要度と緊急度に従って選択します。</small>
           </label>
 
           <label class="form-field">
-            <span>\u671f\u9650</span>
+            <span>期限</span>
             <input type="date" name="due_date" id="due_date" />
+            <small class="helper-text">タスクの期限日を選択してください。選択しない場合は空でも構いません。</small>
           </label>
 
           <label class="form-field">
-            <span>\u4f5c\u6210\u8005</span>
-            <input type="text" name="created_by" id="created_by" />
+            <span>作成者</span>
+            <input type="text" name="created_by" id="created_by" placeholder="タスクを作成した人の名前" />
+            <small class="helper-text">このタスクを作成した人の名前を入力してください。選択しない場合は空でも構いません。</small>
           </label>
         </div>
 
         <label class="form-field">
-          <span>\u8a73\u7d30</span>
-          <textarea name="description" id="description" rows="4" maxlength="500"></textarea>
+          <span>詳細</span>
+          <textarea name="description" id="description" rows="4" maxlength="500" placeholder="タスクの詳細な内容を入力してください"></textarea>
+          <small class="helper-text">タスクの詳細な内容を入力してください。最大500文字。選択しない場合は空でも構いません。</small>
         </label>
 
         <footer class="modal__footer">

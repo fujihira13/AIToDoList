@@ -8,7 +8,7 @@
     "due_date": "2025-12-05",
     "status": "未着手",
     "department": "デザイン",
-    "priority": "中",
+    "priority": "高",
     "quadrant": 2
   },
   {
@@ -21,7 +21,7 @@
     "status": "完了",
     "department": "総務",
     "priority": "低",
-    "quadrant": 1
+    "quadrant": 3
   },
   {
     "id": 4,
@@ -33,7 +33,7 @@
     "status": "未着手",
     "department": "広報",
     "priority": "低",
-    "quadrant": 4
+    "quadrant": 2
   },
   {
     "id": 6,
@@ -45,7 +45,7 @@
     "status": "未着手",
     "department": "広報",
     "priority": "中",
-    "quadrant": 3
+    "quadrant": 2
   },
   {
     "title": "んｆｆｇ",
@@ -55,8 +55,20 @@
     "due_date": "2025-11-06",
     "status": "未着手",
     "department": null,
-    "priority": "高",
-    "quadrant": 3,
+    "priority": "低",
+    "quadrant": 2,
     "id": 7
+  },
+  {
+    "title": "ｔｈｒｔ",
+    "description": null,
+    "owner_id": 2,
+    "created_by": null,
+    "due_date": "2025-11-17",
+    "status": "進行中",
+    "department": null,
+    "priority": "高",
+    "quadrant": 2,
+    "id": 8
   }
 ]

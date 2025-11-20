@@ -349,8 +349,19 @@ body {
 .modal__header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1rem;
+}
+
+.modal__header > div {
+  flex: 1;
+}
+
+.modal__description {
+  margin: 0.4rem 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 .form-grid {
@@ -376,8 +387,14 @@ body {
 }
 
 .helper-text {
-  color: #94a3b8;
+  color: #64748b;
   font-size: 0.8rem;
+  margin-top: 0.2rem;
+  line-height: 1.4;
+}
+
+.form-field .helper-text:first-of-type {
+  margin-top: 0.3rem;
 }
 
 .modal__footer {
