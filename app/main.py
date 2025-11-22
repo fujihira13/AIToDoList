@@ -5,10 +5,12 @@ All business copy on the UI stays in Japanese, but the backend is plain FastAPI.
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 from typing import Dict, List
+from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -17,6 +19,7 @@ from . import repository, schemas
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
+AVATARS_DIR = BASE_DIR / "static" / "avatars"
 
 app = FastAPI(title="Eisenhower Board", version="0.2.0")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -27,6 +30,7 @@ app.mount(
 )
 
 repo = repository.DataRepository(DATA_DIR)
+AVATARS_DIR.mkdir(parents=True, exist_ok=True)
 
 QUADRANT_LABELS = {
     1: "\u91cd\u8981\u304b\u3064\u7dca\u6025",
@@ -160,3 +164,63 @@ async def api_move_task(task_id: int, payload: schemas.TaskQuadrantUpdate) -> Di
 async def api_delete_task(task_id: int) -> None:
     _task_or_404(task_id)
     repo.delete_task(task_id)
+
+
+@app.post(
+    "/api/staff",
+    response_model=schemas.Staff,
+    status_code=status.HTTP_201_CREATED,
+)
+async def api_create_staff(
+    name: str = Form(...),
+    department: str = Form(None),
+    photo_q1: UploadFile = File(None),
+    photo_q2: UploadFile = File(None),
+    photo_q3: UploadFile = File(None),
+    photo_q4: UploadFile = File(None),
+) -> Dict:
+    """メンバーを追加します。各象限用の画像をアップロードできます。"""
+    # 画像ファイルを保存
+    photo_paths = {}
+    for quadrant, upload_file in [(1, photo_q1), (2, photo_q2), (3, photo_q3), (4, photo_q4)]:
+        if upload_file and upload_file.filename:
+            # ファイル拡張子を取得
+            ext = Path(upload_file.filename).suffix or ".png"
+            # ユニークなファイル名を生成
+            filename = f"{uuid4()}{ext}"
+            file_path = AVATARS_DIR / filename
+            
+            # ファイルを保存
+            with file_path.open("wb") as buffer:
+                shutil.copyfileobj(upload_file.file, buffer)
+            
+            photo_paths[f"photo_q{quadrant}"] = filename
+    
+    # メンバーを作成
+    payload = schemas.StaffCreate(
+        name=name,
+        department=department if department else None,
+        **photo_paths,
+    )
+    created = repo.create_staff(payload)
+    return created
+
+
+@app.delete("/api/staff/{staff_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def api_delete_staff(staff_id: int) -> None:
+    """メンバーを削除します。"""
+    try:
+        staff = next((s for s in repo.list_staff() if s["id"] == staff_id), None)
+        if not staff:
+            raise HTTPException(status_code=404, detail="メンバーが見つかりません")
+        
+        # 画像ファイルを削除
+        for key in ["photo", "photo_q1", "photo_q2", "photo_q3", "photo_q4"]:
+            if key in staff and staff[key]:
+                img_path = AVATARS_DIR / staff[key]
+                if img_path.exists():
+                    img_path.unlink()
+        
+        repo.delete_staff(staff_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="メンバーが見つかりません") from exc

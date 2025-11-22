@@ -23,6 +23,7 @@ class DataRepository:
         self._tasks: List[TaskRecord] = self._load_json(self._tasks_file, [])
         self._staff: List[StaffRecord] = self._load_json(self._staff_file, [])
         self._next_task_id = self._calculate_next_id(self._tasks)
+        self._next_staff_id = self._calculate_next_id(self._staff)
 
     # ---------- public API ----------
     def list_staff(self) -> List[StaffRecord]:
@@ -72,6 +73,23 @@ class DataRepository:
             self._persist_tasks()
             return task.copy()
 
+    def create_staff(self, payload: schemas.StaffCreate) -> StaffRecord:
+        data = payload.model_dump(exclude_unset=True)
+        with self._lock:
+            data["id"] = self._next_staff_id
+            self._next_staff_id += 1
+            self._staff.append(data)
+            self._persist_staff()
+        return data.copy()
+
+    def delete_staff(self, staff_id: int) -> None:
+        with self._lock:
+            index = next((i for i, staff in enumerate(self._staff) if staff["id"] == staff_id), -1)
+            if index == -1:
+                raise KeyError(staff_id)
+            self._staff.pop(index)
+            self._persist_staff()
+
     # ---------- helpers ----------
     def _calculate_next_id(self, records: List[TaskRecord]) -> int:
         if not records:
@@ -87,6 +105,12 @@ class DataRepository:
     def _persist_tasks(self) -> None:
         self._tasks_file.write_text(
             json.dumps(self._tasks, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    def _persist_staff(self) -> None:
+        self._staff_file.write_text(
+            json.dumps(self._staff, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 

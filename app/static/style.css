@@ -313,6 +313,11 @@ body {
   color: #fff;
 }
 
+.btn--secondary {
+  background: #64748b;
+  color: #fff;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -386,6 +391,11 @@ body {
   font: inherit;
 }
 
+.form-field input[type="file"] {
+  padding: 0.4rem;
+  cursor: pointer;
+}
+
 .helper-text {
   color: #64748b;
   font-size: 0.8rem;
@@ -423,6 +433,300 @@ body {
   background: rgba(15, 23, 42, 0.4);
 }
 
+/* タブUI */
+.tabs {
+  margin-top: 1rem;
+}
+
+.tabs__header {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: #2563eb;
+}
+
+.tab-btn--active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel--active {
+  display: block;
+}
+
+/* プレビュー画面 */
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.preview-section {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+}
+
+.preview-section__title {
+  margin: 0 0 1.5rem;
+  font-size: 1.3rem;
+  color: #0f172a;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+}
+
+/* 象限概要 - 2x2マトリクス形式 */
+.quadrant-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0.75rem;
+  aspect-ratio: 1;
+  width: 80%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.quadrant-summary {
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: #fff;
+}
+
+.quadrant-summary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* 各象限の色分け */
+.quadrant-summary[data-quadrant="1"] {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.quadrant-summary[data-quadrant="2"] {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.quadrant-summary[data-quadrant="3"] {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.quadrant-summary[data-quadrant="4"] {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.quadrant-summary__header {
+  margin-bottom: 0.5rem;
+}
+
+.quadrant-summary__face {
+  font-size: 1rem;
+  margin: 0 0 0.3rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.quadrant-summary__number {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 0.25rem;
+}
+
+.quadrant-summary__label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: #fff;
+}
+
+.quadrant-summary__action {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+  color: #fff;
+}
+
+.quadrant-summary__count {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.quadrant-summary__staff-list {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.quadrant-summary__staff-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.quadrant-summary__staff-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.quadrant-summary__staff-name .avatar {
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+.quadrant-summary__staff-count {
+  margin-left: auto;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+
+/* 職員別分布 */
+.staff-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.staff-distribution-item {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 1.2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.staff-distribution-item__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.staff-distribution-item__info {
+  flex: 1;
+}
+
+.staff-distribution-item__name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.staff-distribution-item__dept {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.staff-distribution-item__total {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.staff-distribution-item__quadrants {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.quadrant-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quadrant-bar__label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+  font-weight: 600;
+}
+
+.quadrant-bar__container {
+  width: 100%;
+  height: 120px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.quadrant-bar__fill {
+  width: 100%;
+  background: linear-gradient(to top, #2563eb, #3b82f6);
+  border-radius: 8px 8px 0 0;
+  transition: height 0.3s ease;
+  min-height: 4px;
+}
+
+.quadrant-bar__fill--q1 {
+  background: linear-gradient(to top, #ef4444, #f87171);
+}
+
+.quadrant-bar__fill--q2 {
+  background: linear-gradient(to top, #f59e0b, #fbbf24);
+}
+
+.quadrant-bar__fill--q3 {
+  background: linear-gradient(to top, #3b82f6, #60a5fa);
+}
+
+.quadrant-bar__fill--q4 {
+  background: linear-gradient(to top, #10b981, #34d399);
+}
+
+.quadrant-bar__value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 960px) {
   body {
     padding: 1rem;
@@ -435,5 +739,10 @@ body {
   .header-actions {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .quadrant-overview {
+    width: 100%;
+    min-height: 300px;
   }
 }

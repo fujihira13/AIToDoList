@@ -9,31 +9,51 @@
   <body>
     <header class="page-header">
       <div>
-        <p class="page-label">{{ copy.page_label }}</p>
         <h1>{{ copy.page_title }}</h1>
-        <p class="page-sub">{{ copy.page_sub }}</p>
       </div>
       <div class="header-actions">
         <button type="button" class="btn btn--primary" id="addTaskBtn">
           {{ copy.add_task }}
         </button>
-        <div class="tips">
-          <p>{{ copy.hint_title }}</p>
-          <code>uvicorn app.main:app --reload</code>
-        </div>
+        <button type="button" class="btn btn--secondary" id="addStaffBtn">
+          メンバーを追加
+        </button>
       </div>
     </header>
 
-    <main class="layout">
-      <section class="board" id="board" aria-live="polite"></section>
-      <aside class="staff-panel">
-        <div class="staff-panel__header">
-          <h2>{{ copy.staff_title }}</h2>
-          <p>{{ copy.staff_sub }}</p>
+    <div class="tabs">
+      <div class="tabs__header">
+        <button type="button" class="tab-btn tab-btn--active" data-tab="board">
+          ボード
+        </button>
+        <button type="button" class="tab-btn" data-tab="preview">
+          プレビュー
+        </button>
+      </div>
+      <div class="tabs__content">
+        <div class="tab-panel tab-panel--active" id="boardTab">
+          <main class="layout">
+            <section class="board" id="board" aria-live="polite"></section>
+            <aside class="staff-panel">
+              <div class="staff-panel__header">
+                <h2>{{ copy.staff_title }}</h2>
+                <p>{{ copy.staff_sub }}</p>
+              </div>
+              <div id="staffList" class="staff-list"></div>
+            </aside>
+          </main>
         </div>
-        <div id="staffList" class="staff-list"></div>
-      </aside>
-    </main>
+        <div class="tab-panel" id="previewTab">
+          <div class="preview-container">
+            <div class="quadrant-overview" id="quadrantOverview"></div>
+            <section class="preview-section">
+              <h2 class="preview-section__title">職員別タスク分布</h2>
+              <div class="staff-distribution" id="staffDistribution"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <dialog id="taskDialog" class="modal">
       <form id="taskForm" method="dialog">
@@ -129,6 +149,67 @@
               {{ copy.delete_task }}
             </button>
             <button type="submit" class="btn btn--primary">{{ copy.save_task }}</button>
+          </div>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="staffDialog" class="modal">
+      <form id="staffForm" method="dialog" enctype="multipart/form-data">
+        <header class="modal__header">
+          <div>
+            <h2>メンバーを追加</h2>
+            <p class="modal__description">メンバー情報と各象限用のアバター画像を追加してください。*マークが付いている項目は必須です。</p>
+          </div>
+          <button type="button" class="btn btn--ghost" id="cancelStaffBtn">
+            {{ copy.cancel }}
+          </button>
+        </header>
+
+        <div class="form-grid">
+          <label class="form-field">
+            <span>名前 *</span>
+            <input type="text" name="name" id="staff_name" maxlength="50" required placeholder="メンバーの名前を入力してください" />
+            <small class="helper-text">メンバーの名前を入力してください。最大50文字。</small>
+          </label>
+
+          <label class="form-field">
+            <span>所属部署</span>
+            <input type="text" name="department" id="staff_department" maxlength="50" placeholder="所属部署を入力してください" />
+            <small class="helper-text">所属部署を入力してください。任意項目です。</small>
+          </label>
+        </div>
+
+        <div class="form-grid">
+          <label class="form-field">
+            <span>第1象限用アバター（重要かつ緊急）</span>
+            <input type="file" name="photo_q1" id="staff_photo_q1" accept="image/*" />
+            <small class="helper-text">焦っている表情のアバター画像をアップロードしてください。</small>
+          </label>
+
+          <label class="form-field">
+            <span>第2象限用アバター（重要だが緊急ではない）</span>
+            <input type="file" name="photo_q2" id="staff_photo_q2" accept="image/*" />
+            <small class="helper-text">計画的に進める表情のアバター画像をアップロードしてください。</small>
+          </label>
+
+          <label class="form-field">
+            <span>第3象限用アバター（緊急だが重要ではない）</span>
+            <input type="file" name="photo_q3" id="staff_photo_q3" accept="image/*" />
+            <small class="helper-text">困っている表情のアバター画像をアップロードしてください。</small>
+          </label>
+
+          <label class="form-field">
+            <span>第4象限用アバター（重要でも緊急でもない）</span>
+            <input type="file" name="photo_q4" id="staff_photo_q4" accept="image/*" />
+            <small class="helper-text">穏やかな表情のアバター画像をアップロードしてください。</small>
+          </label>
+        </div>
+
+        <footer class="modal__footer">
+          <span id="staffFormStatus" class="form-status" role="status"></span>
+          <div class="modal__actions">
+            <button type="submit" class="btn btn--primary">追加</button>
           </div>
         </footer>
       </form>

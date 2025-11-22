@@ -13,7 +13,20 @@ class Staff(BaseModel):
     id: int
     name: str
     department: Optional[str] = None
-    photo: Optional[str] = None
+    photo: Optional[str] = None  # 後方互換性のため残す
+    photo_q1: Optional[str] = None  # 第1象限用（重要かつ緊急）
+    photo_q2: Optional[str] = None  # 第2象限用（重要だが緊急ではない）
+    photo_q3: Optional[str] = None  # 第3象限用（緊急だが重要ではない）
+    photo_q4: Optional[str] = None  # 第4象限用（重要でも緊急でもない）
+
+
+class StaffCreate(BaseModel):
+    name: str = Field(..., max_length=50)
+    department: Optional[str] = Field(None, max_length=50)
+    photo_q1: Optional[str] = None
+    photo_q2: Optional[str] = None
+    photo_q3: Optional[str] = None
+    photo_q4: Optional[str] = None
 
 
 class TaskBase(BaseModel):

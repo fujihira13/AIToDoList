@@ -26,16 +26,25 @@
   const boardEl = document.getElementById("board");
   const staffEl = document.getElementById("staffList");
   const addBtn = document.getElementById("addTaskBtn");
+  const addStaffBtn = document.getElementById("addStaffBtn");
   const dialog = document.getElementById("taskDialog");
+  const staffDialog = document.getElementById("staffDialog");
   const form = document.getElementById("taskForm");
+  const staffForm = document.getElementById("staffForm");
   const formTitle = document.getElementById("taskFormTitle");
   const deleteBtn = document.getElementById("deleteTaskBtn");
   const cancelBtn = document.getElementById("cancelTaskBtn");
+  const cancelStaffBtn = document.getElementById("cancelStaffBtn");
   const formStatus = document.getElementById("formStatus");
+  const staffFormStatus = document.getElementById("staffFormStatus");
   const ownerDept = document.getElementById("ownerDept");
   const confirmDialog = document.getElementById("confirmDialog");
   const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
   const confirmCancelBtn = document.getElementById("confirmCancelBtn");
+  const tabBtns = document.querySelectorAll(".tab-btn");
+  const tabPanels = document.querySelectorAll(".tab-panel");
+  const quadrantOverviewEl = document.getElementById("quadrantOverview");
+  const staffDistributionEl = document.getElementById("staffDistribution");
 
   let editingId = null;
   let deleteTargetId = null;
@@ -126,6 +135,7 @@
     const owner = findStaff(task.owner_id);
     const statusClass = state.statusColors[task.status] || "badge--todo";
     const priorityClass = priorityClassMap[task.priority] || "low";
+    const quadrant = task.quadrant || 1;
 
     card.innerHTML = `
       <header class="task-card__header">
@@ -139,7 +149,7 @@
         <div>
           <dt>担当者</dt>
           <dd>
-            ${renderAvatar(owner)}
+            ${renderAvatar(owner, quadrant)}
             ${owner ? owner.name : "-"}
             ${owner && owner.department ? `(${owner.department})` : ""}
           </dd>
@@ -153,10 +163,20 @@
     return card;
   }
 
-  function renderAvatar(staff) {
+  function renderAvatar(staff, quadrant = null) {
     if (!staff) return "";
-    if (staff.photo) {
-      return `<img src="/static/avatars/${staff.photo}" alt="${staff.name}" class="avatar" />`;
+    
+    // 象限が指定されている場合、その象限用の画像を使用
+    let photo = null;
+    if (quadrant && staff[`photo_q${quadrant}`]) {
+      photo = staff[`photo_q${quadrant}`];
+    } else if (staff.photo) {
+      // 後方互換性のため、photoフィールドも確認
+      photo = staff.photo;
+    }
+    
+    if (photo) {
+      return `<img src="/static/avatars/${photo}" alt="${staff.name}" class="avatar" />`;
     }
     const initial = staff.name ? staff.name.charAt(0) : "?";
     return `<span class="avatar">${initial}</span>`;
@@ -263,6 +283,10 @@
         state.tasks = [...state.tasks, data];
       }
       renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
+        renderPreview();
+      }
       closeForm();
     } catch (error) {
       resetFormStatus(error.message || "保存に失敗しました");
@@ -303,6 +327,10 @@
       await request(`/api/tasks/${deleteTargetId}`, { method: "DELETE" });
       state.tasks = state.tasks.filter((task) => task.id !== deleteTargetId);
       renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
+        renderPreview();
+      }
       closeConfirm();
       closeForm();
     } catch (error) {
@@ -319,6 +347,10 @@
       });
       state.tasks = state.tasks.map((task) => (task.id === data.id ? data : task));
       renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
+        renderPreview();
+      }
     } catch (error) {
       resetFormStatus(error.message || "タスクの移動に失敗しました");
     }
@@ -350,6 +382,150 @@
     return date.toLocaleDateString("ja-JP", { month: "short", day: "numeric" });
   }
 
+  // タブ切り替え機能
+  function switchTab(tabName) {
+    tabBtns.forEach((btn) => {
+      if (btn.dataset.tab === tabName) {
+        btn.classList.add("tab-btn--active");
+      } else {
+        btn.classList.remove("tab-btn--active");
+      }
+    });
+    tabPanels.forEach((panel) => {
+      if (panel.id === `${tabName}Tab`) {
+        panel.classList.add("tab-panel--active");
+      } else {
+        panel.classList.remove("tab-panel--active");
+      }
+    });
+    if (tabName === "preview") {
+      renderPreview();
+    }
+  }
+
+  // プレビュー画面のレンダリング
+  function renderPreview() {
+    renderQuadrantOverview();
+    renderStaffDistribution();
+  }
+
+  // 象限概要の表示（2x2マトリクス形式）
+  function renderQuadrantOverview() {
+    if (!quadrantOverviewEl) return;
+    quadrantOverviewEl.innerHTML = "";
+    
+    // 象限ごとのアクションラベル（画像に合わせた表現）
+    const actionLabels = {
+      1: "やる",
+      2: "予定する",
+      3: "任せる",
+      4: "削除する",
+    };
+    
+    // 象限の順序を2x2グリッドに合わせて調整（1=左上, 2=右上, 3=左下, 4=右下）
+    const quadrantOrder = [1, 2, 3, 4];
+    
+    quadrantOrder.forEach((quadrant) => {
+      const tasks = state.tasks.filter((task) => task.quadrant === quadrant);
+      const face = state.faces[quadrant] || {};
+      const label = state.labels[quadrant] || "";
+      const action = actionLabels[quadrant] || "";
+      
+      // 職員別のタスク数を集計（重複を避けるため、職員IDをキーに）
+      const staffMap = new Map();
+      tasks.forEach((task) => {
+        const owner = findStaff(task.owner_id);
+        if (owner) {
+          if (!staffMap.has(owner.id)) {
+            staffMap.set(owner.id, { staff: owner, count: 0 });
+          }
+          staffMap.get(owner.id).count++;
+        }
+      });
+      
+      // 職員リストを配列に変換してソート（タスク数が多い順）
+      const staffList = Array.from(staffMap.values()).sort((a, b) => b.count - a.count);
+      
+      const summary = document.createElement("div");
+      summary.className = "quadrant-summary";
+      summary.dataset.quadrant = String(quadrant);
+      summary.innerHTML = `
+        <div class="quadrant-summary__header">
+          <p class="quadrant-summary__face">${face.emoji || ""} ${face.caption || ""}</p>
+          <h3 class="quadrant-summary__label">${label}</h3>
+        </div>
+        <p class="quadrant-summary__count">${tasks.length}</p>
+        <div class="quadrant-summary__staff-list">
+          ${staffList.length > 0
+            ? staffList
+                .map(({ staff, count }) => `
+                  <div class="quadrant-summary__staff-item">
+                    <div class="quadrant-summary__staff-name">
+                      ${renderAvatar(staff, quadrant)}
+                      <span>${staff.name}</span>
+                    </div>
+                    <span class="quadrant-summary__staff-count">${count}件</span>
+                  </div>
+                `)
+                .join("")
+            : ''}
+        </div>
+      `;
+      quadrantOverviewEl.appendChild(summary);
+    });
+  }
+
+  // 職員別タスク分布の表示
+  function renderStaffDistribution() {
+    if (!staffDistributionEl) return;
+    staffDistributionEl.innerHTML = "";
+    
+    state.staff.forEach((staff) => {
+      // 各職員の象限別タスク数を集計
+      const quadrantCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+      const staffTasks = state.tasks.filter((task) => task.owner_id === staff.id);
+      staffTasks.forEach((task) => {
+        const q = task.quadrant || 1;
+        quadrantCounts[q] = (quadrantCounts[q] || 0) + 1;
+      });
+      
+      const total = staffTasks.length;
+      const maxCount = Math.max(...Object.values(quadrantCounts), 1);
+      
+      const item = document.createElement("div");
+      item.className = "staff-distribution-item";
+      item.innerHTML = `
+        <div class="staff-distribution-item__header">
+          ${renderAvatar(staff)}
+          <div class="staff-distribution-item__info">
+            <p class="staff-distribution-item__name">${staff.name}</p>
+            <p class="staff-distribution-item__dept">${staff.department || ""}</p>
+          </div>
+          <div class="staff-distribution-item__total">${total}件</div>
+        </div>
+        <div class="staff-distribution-item__quadrants">
+          ${quadrants
+            .map((q) => {
+              const count = quadrantCounts[q] || 0;
+              const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+              const qClass = `quadrant-bar__fill--q${q}`;
+              return `
+                <div class="quadrant-bar">
+                  <div class="quadrant-bar__label">第${q}象限</div>
+                  <div class="quadrant-bar__container">
+                    <div class="quadrant-bar__fill ${qClass}" style="height: ${height}%"></div>
+                  </div>
+                  <div class="quadrant-bar__value">${count}</div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `;
+      staffDistributionEl.appendChild(item);
+    });
+  }
+
   // Event wiring
   addBtn?.addEventListener("click", () => openForm(null));
   cancelBtn?.addEventListener("click", closeForm);
@@ -362,6 +538,82 @@
   });
   confirmDeleteBtn?.addEventListener("click", handleDelete);
   confirmCancelBtn?.addEventListener("click", closeConfirm);
+  
+  // メンバー追加フォーム
+  function openStaffForm() {
+    if (!staffForm) return;
+    resetStaffFormStatus();
+    if (typeof staffDialog?.showModal === "function") {
+      staffDialog.showModal();
+    } else {
+      staffDialog?.classList.add("modal--open");
+    }
+  }
+
+  function closeStaffForm() {
+    if (typeof staffDialog?.close === "function") {
+      staffDialog.close();
+    } else {
+      staffDialog?.classList.remove("modal--open");
+    }
+    if (staffForm) {
+      staffForm.reset();
+    }
+  }
+
+  function resetStaffFormStatus(message = "") {
+    if (staffFormStatus) {
+      staffFormStatus.textContent = message;
+    }
+  }
+
+  async function handleStaffSubmit(event) {
+    event.preventDefault();
+    if (!staffForm) return;
+    
+    const formData = new FormData(staffForm);
+    
+    try {
+      const response = await fetch("/api/staff", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        let message = "メンバーの追加に失敗しました";
+        try {
+          const payload = await response.json();
+          if (typeof payload.detail === "string") message = payload.detail;
+        } catch (_) {
+          // ignore
+        }
+        throw new Error(message);
+      }
+      
+      const data = await response.json();
+      state.staff = [...state.staff, data];
+      renderStaff();
+      renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
+        renderPreview();
+      }
+      closeStaffForm();
+    } catch (error) {
+      resetStaffFormStatus(error.message || "メンバーの追加に失敗しました");
+    }
+  }
+
+  addStaffBtn?.addEventListener("click", openStaffForm);
+  cancelStaffBtn?.addEventListener("click", closeStaffForm);
+  staffForm?.addEventListener("submit", handleStaffSubmit);
+  
+  // タブボタンのイベント
+  tabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchTab(btn.dataset.tab);
+    });
+  });
 
   renderBoard();
   renderStaff();
