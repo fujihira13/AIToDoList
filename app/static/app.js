@@ -999,6 +999,24 @@
   cancelBtn?.addEventListener("click", closeForm);
   form?.addEventListener("submit", handleSubmit);
   form?.owner_id?.addEventListener("change", updateOwnerHint);
+  // 期限フィールドのクリック時にカレンダーを表示
+  if (form?.due_date) {
+    form.due_date.addEventListener("click", async () => {
+      // showPicker()メソッドがサポートされている場合は使用
+      // これにより、クリック時にカレンダーが確実に表示されます
+      if (typeof form.due_date.showPicker === "function") {
+        try {
+          await form.due_date.showPicker();
+        } catch (error) {
+          // showPicker()が失敗した場合は、通常のフォーカス処理にフォールバック
+          form.due_date.focus();
+        }
+      } else {
+        // showPicker()がサポートされていない場合は、フォーカスを設定
+        form.due_date.focus();
+      }
+    });
+  }
   deleteBtn?.addEventListener("click", () => {
     if (editingId) {
       confirmDelete(editingId);
