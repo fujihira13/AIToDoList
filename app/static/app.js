@@ -59,7 +59,7 @@
   let deleteTargetId = null;
   let deleteTargetStaffId = null;
   let editingStaffId = null;
-  let completedSortOrder = "asc";
+  let completedSortOrder = "date-asc";
   const confirmMessageEl = document.getElementById("confirmMessage");
 
   const quadrants = [1, 2, 3, 4];
@@ -874,15 +874,29 @@
       return;
     }
 
-    // 日付でソート
+    // ソート処理
+    const priorityOrder = { 高: 1, 中: 2, 低: 3 };
     const sortedTasks = [...completedTasks].sort((a, b) => {
-      const dateA = a.due_date || "";
-      const dateB = b.due_date || "";
-      if (completedSortOrder === "asc") {
-        return dateA.localeCompare(dateB);
-      } else {
-        return dateB.localeCompare(dateA);
+      if (completedSortOrder.startsWith("date-")) {
+        // 日付でソート
+        const dateA = a.due_date || "";
+        const dateB = b.due_date || "";
+        if (completedSortOrder === "date-asc") {
+          return dateA.localeCompare(dateB);
+        } else {
+          return dateB.localeCompare(dateA);
+        }
+      } else if (completedSortOrder.startsWith("priority-")) {
+        // 優先度でソート
+        const priorityA = priorityOrder[a.priority] || 2;
+        const priorityB = priorityOrder[b.priority] || 2;
+        if (completedSortOrder === "priority-asc") {
+          return priorityA - priorityB;
+        } else {
+          return priorityB - priorityA;
+        }
       }
+      return 0;
     });
 
     // 象限ごとにグループ化

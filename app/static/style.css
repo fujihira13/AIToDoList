@@ -1247,8 +1247,8 @@ body {
 }
 
 .completed-quadrant__tasks {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 

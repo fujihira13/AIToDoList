@@ -82,13 +82,14 @@
             <section class="completed-section">
               <div class="completed-panel__header">
                 <h2>完了したタスク</h2>
-                <p>ステータスが「完了」のタスクを表示します。</p>
               </div>
               <div class="completed-sort">
                 <label for="completedSortOrder">並び順:</label>
                 <select id="completedSortOrder" class="completed-sort__select">
-                  <option value="asc">日付の昇順</option>
-                  <option value="desc">日付の降順</option>
+                  <option value="date-asc">日付の昇順</option>
+                  <option value="date-desc">日付の降順</option>
+                  <option value="priority-asc">優先度の昇順</option>
+                  <option value="priority-desc">優先度の降順</option>
                 </select>
               </div>
               <div id="completedList" class="completed-list"></div>
