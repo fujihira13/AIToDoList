@@ -81,7 +81,7 @@ def _serialized_tasks() -> List[Dict]:
 
 def _ensure_staff(owner_id: int) -> None:
     if owner_id not in repo.staff_map():
-        raise HTTPException(status_code=400, detail="owner_id \u304c\u5b58\u5728\u3057\u307e\u305b\u3093")
+        raise HTTPException(status_code=400, detail="担当者が存在しません")
 
 
 def _task_or_404(task_id: int) -> Dict:

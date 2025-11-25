@@ -1,0 +1,1172 @@
+(() => {
+  const dataScript = document.getElementById("initial-data");
+  let initial = {};
+  if (dataScript) {
+    try {
+      initial = JSON.parse(dataScript.textContent || "{}");
+    } catch (error) {
+      console.warn("初期データの解析に失敗しました", error);
+    }
+  }
+
+  const state = {
+    tasks: initial.tasks || [],
+    staff: initial.staff || [],
+    labels: initial.quadrant_labels || {},
+    faces: initial.quadrant_faces || {},
+    statusColors: initial.status_colors || {},
+  };
+
+  const priorityClassMap = {
+    高: "high",
+    中: "medium",
+    低: "low",
+  };
+
+  const boardEl = document.getElementById("board");
+  const staffEl = document.getElementById("staffList");
+  const addBtn = document.getElementById("addTaskBtn");
+  const addStaffBtn = document.getElementById("addStaffBtn");
+  const dialog = document.getElementById("taskDialog");
+  const staffDialog = document.getElementById("staffDialog");
+  const form = document.getElementById("taskForm");
+  const staffForm = document.getElementById("staffForm");
+  const formStaffId = document.getElementById("staff_id");
+  const formTitle = document.getElementById("taskFormTitle");
+  const deleteBtn = document.getElementById("deleteTaskBtn");
+  const cancelBtn = document.getElementById("cancelTaskBtn");
+  const cancelStaffBtn = document.getElementById("cancelStaffBtn");
+  const formStatus = document.getElementById("formStatus");
+  const staffFormStatus = document.getElementById("staffFormStatus");
+  const ownerDept = document.getElementById("ownerDept");
+  const confirmDialog = document.getElementById("confirmDialog");
+  const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+  const confirmCancelBtn = document.getElementById("confirmCancelBtn");
+  const confirmCloseBtn = document.getElementById("confirmCloseBtn");
+  const tabBtns = document.querySelectorAll(".tab-btn");
+  const tabPanels = document.querySelectorAll(".tab-panel");
+  const quadrantOverviewEl = document.getElementById("quadrantOverview");
+  const staffDistributionEl = document.getElementById("staffDistribution");
+  const dangerGaugeEl = document.getElementById("dangerGauge");
+  const dangerStaffListEl = document.getElementById("dangerStaffList");
+  const dangerListEl = document.getElementById("dangerList");
+  const completedListEl = document.getElementById("completedList");
+  const completedSortOrderEl = document.getElementById("completedSortOrder");
+  const staffFormTitle = document.getElementById("staffFormTitle");
+  const submitStaffBtn = document.getElementById("submitStaffBtn");
+  const deleteStaffBtn = document.getElementById("deleteStaffBtn");
+
+  let editingId = null;
+  let deleteTargetId = null;
+  let deleteTargetStaffId = null;
+  let editingStaffId = null;
+  let completedSortOrder = "date-asc";
+  const confirmMessageEl = document.getElementById("confirmMessage");
+
+  const quadrants = [1, 2, 3, 4];
+
+  function sortTasks(list) {
+    const priorityOrder = { 高: 1, 中: 2, 低: 3 };
+    return [...list].sort((a, b) => {
+      const qa = a.quadrant || 4;
+      const qb = b.quadrant || 4;
+      if (qa !== qb) return qa - qb;
+      // 優先度でソート（高い順）
+      const pa = priorityOrder[a.priority] || 2;
+      const pb = priorityOrder[b.priority] || 2;
+      if (pa !== pb) return pa - pb;
+      // 優先度が同じ場合は期限でソート
+      const da = a.due_date || "9999-12-31";
+      const db = b.due_date || "9999-12-31";
+      return da.localeCompare(db);
+    });
+  }
+
+  function renderBoard() {
+    if (!boardEl) return;
+    boardEl.innerHTML = "";
+    quadrants.forEach((quadrant) => {
+      const container = document.createElement("section");
+      container.className = "board__quadrant";
+      container.dataset.quadrant = String(quadrant);
+      container.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        container.classList.add("board__quadrant--hover");
+      });
+      container.addEventListener("dragleave", () => {
+        container.classList.remove("board__quadrant--hover");
+      });
+      container.addEventListener("drop", (event) => {
+        event.preventDefault();
+        container.classList.remove("board__quadrant--hover");
+        const taskId = Number(event.dataTransfer?.getData("text/task-id"));
+        if (taskId) {
+          moveTask(taskId, quadrant);
+        }
+      });
+
+      const header = document.createElement("div");
+      header.className = "quadrant__header";
+      const face = state.faces[quadrant] || {};
+      header.innerHTML = `
+        <div>
+          <h2>${state.labels[quadrant] || ""}</h2>
+        </div>
+        <span class="quadrant__count"></span>
+      `;
+      const counter = header.querySelector(".quadrant__count");
+      container.appendChild(header);
+
+      const body = document.createElement("div");
+      body.className = "quadrant__body";
+
+      // 完了タスクを除外
+      const tasks = state.tasks.filter(
+        (task) => task.quadrant === quadrant && task.status !== "完了"
+      );
+      counter.textContent = `${tasks.length} 件`;
+
+      if (tasks.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "task-card task-card--empty";
+        empty.textContent = "タスクはまだありません";
+        body.appendChild(empty);
+      } else {
+        sortTasks(tasks).forEach((task) => {
+          body.appendChild(buildTaskCard(task));
+        });
+      }
+
+      container.appendChild(body);
+      boardEl.appendChild(container);
+    });
+  }
+
+  function buildTaskCard(task) {
+    const card = document.createElement("article");
+    card.className = "task-card";
+    card.draggable = true;
+    card.dataset.taskId = String(task.id);
+    card.addEventListener("dragstart", (event) => {
+      event.dataTransfer?.setData("text/task-id", String(task.id));
+      event.dataTransfer?.setDragImage(card, 20, 20);
+    });
+    card.addEventListener("click", () => openForm(task.id));
+
+    const owner = findStaff(task.owner_id);
+    const statusClass = state.statusColors[task.status] || "badge--todo";
+    const priorityClass = priorityClassMap[task.priority] || "low";
+    const quadrant = task.quadrant || 1;
+
+    card.innerHTML = `
+      <header class="task-card__header">
+        <span class="task-card__priority task-card__priority--${priorityClass}">
+          ${task.priority || ""}
+        </span>
+        <span class="badge ${statusClass}">${task.status || ""}</span>
+      </header>
+      <h3 class="task-card__title">${task.title}</h3>
+      <dl class="task-card__meta">
+        <div>
+          <dt>担当者</dt>
+          <dd>
+            ${renderAvatar(owner, quadrant)}
+            ${owner ? owner.name : "-"}
+            ${owner && owner.department ? `(${owner.department})` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>期限</dt>
+          <dd>${formatDate(task.due_date)}</dd>
+        </div>
+      </dl>
+    `;
+    return card;
+  }
+
+  function renderAvatar(staff, quadrant = null) {
+    if (!staff) return "";
+
+    // 象限が指定されている場合、その象限用の画像を使用
+    let photo = null;
+    if (quadrant && staff[`photo_q${quadrant}`]) {
+      photo = staff[`photo_q${quadrant}`];
+    } else if (staff.photo) {
+      // 後方互換性のため、photoフィールドも確認
+      photo = staff.photo;
+    }
+
+    if (photo) {
+      return `<img src="/static/avatars/${photo}" alt="${staff.name}" class="avatar" />`;
+    }
+    const initial = staff.name ? staff.name.charAt(0) : "?";
+    return `<span class="avatar">${initial}</span>`;
+  }
+
+  function renderStaff() {
+    if (!staffEl) return;
+    staffEl.innerHTML = "";
+    state.staff.forEach((person) => {
+      const item = document.createElement("article");
+      item.className = "staff-card";
+      item.style.cursor = "pointer";
+      item.addEventListener("click", () => openStaffForm(person.id));
+      item.innerHTML = `
+        ${renderAvatar(person)}
+        <div>
+          <p class="staff-card__name">${person.name}</p>
+          <p class="staff-card__dept">${person.department || ""}</p>
+        </div>
+      `;
+      staffEl.appendChild(item);
+    });
+  }
+
+  function findStaff(id) {
+    return state.staff.find((member) => member.id === id);
+  }
+
+  function openForm(taskId = null) {
+    editingId = taskId;
+    resetFormStatus();
+    if (!form) return;
+    if (taskId) {
+      const task = state.tasks.find((item) => item.id === taskId);
+      if (!task) return;
+      formTitle.textContent = formTitle.dataset.editLabel || "タスクを更新";
+      form.task_id.value = task.id;
+      form.title.value = task.title || "";
+      form.description.value = task.description || "";
+      form.owner_id.value = task.owner_id || "";
+      form.created_by.value = task.created_by || "";
+      form.status.value = task.status || "";
+      form.priority.value = task.priority || "";
+      form.quadrant.value = task.quadrant || 1;
+      form.due_date.value = task.due_date || "";
+    } else {
+      formTitle.textContent = formTitle.dataset.createLabel || "タスクを作成";
+      form.reset();
+      editingId = null;
+    }
+    updateOwnerHint();
+    if (typeof dialog?.showModal === "function") {
+      dialog.showModal();
+    } else {
+      dialog?.classList.add("modal--open");
+    }
+    deleteBtn.style.display = editingId ? "inline-flex" : "none";
+  }
+
+  function closeForm() {
+    editingId = null;
+    if (typeof dialog?.close === "function") {
+      dialog.close();
+    } else {
+      dialog?.classList.remove("modal--open");
+    }
+  }
+
+  function resetFormStatus(message = "") {
+    if (formStatus) {
+      formStatus.textContent = message;
+    }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (!form) return;
+    const payload = {
+      title: form.title.value.trim(),
+      description: form.description.value.trim() || null,
+      owner_id: Number(form.owner_id.value),
+      created_by: form.created_by.value.trim() || null,
+      due_date: form.due_date.value || null,
+      status: form.status.value,
+      priority: form.priority.value,
+      quadrant: Number(form.quadrant.value),
+    };
+    if (!payload.title) {
+      resetFormStatus("タイトルは必須です");
+      return;
+    }
+    if (!payload.owner_id) {
+      resetFormStatus("担当者は必須です");
+      return;
+    }
+    const url = editingId ? `/api/tasks/${editingId}` : "/api/tasks";
+    const method = editingId ? "PUT" : "POST";
+    try {
+      const data = await request(url, {
+        method,
+        body: JSON.stringify(payload),
+      });
+      if (editingId) {
+        state.tasks = state.tasks.map((task) =>
+          task.id === data.id ? data : task
+        );
+      } else {
+        state.tasks = [...state.tasks, data];
+      }
+      renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (
+        document
+          .getElementById("previewTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderPreview();
+      }
+      // デンジャーリストが表示されている場合は更新
+      if (
+        document
+          .getElementById("dangerTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderDangerList();
+      }
+      // 完了タブが表示されている場合は更新
+      if (
+        document
+          .getElementById("completedTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderCompleted();
+      }
+      closeForm();
+    } catch (error) {
+      resetFormStatus(error.message || "保存に失敗しました");
+    }
+  }
+
+  function updateOwnerHint() {
+    if (!ownerDept || !form) return;
+    const staff = findStaff(Number(form.owner_id.value));
+    if (!staff) {
+      ownerDept.textContent = "";
+      return;
+    }
+    ownerDept.textContent = staff.department ? `所属: ${staff.department}` : "";
+  }
+
+  function confirmDelete(taskId) {
+    deleteTargetId = taskId;
+    deleteTargetStaffId = null;
+    if (confirmMessageEl) {
+      confirmMessageEl.textContent =
+        "この操作でタスクが完全に削除されます。続行しますか？";
+    }
+    if (typeof confirmDialog?.showModal === "function") {
+      confirmDialog.showModal();
+    } else {
+      confirmDialog?.classList.add("modal--open");
+    }
+  }
+
+  function confirmDeleteStaff(staffId) {
+    deleteTargetStaffId = staffId;
+    deleteTargetId = null;
+    const staff = state.staff.find((s) => s.id === staffId);
+    const staffName = staff ? staff.name : "";
+    if (confirmMessageEl) {
+      confirmMessageEl.textContent = `メンバー「${staffName}」を削除しますか？この操作は取り消せません。`;
+    }
+    if (typeof confirmDialog?.showModal === "function") {
+      confirmDialog.showModal();
+    } else {
+      confirmDialog?.classList.add("modal--open");
+    }
+  }
+
+  function closeConfirm() {
+    deleteTargetId = null;
+    deleteTargetStaffId = null;
+    if (typeof confirmDialog?.close === "function") {
+      confirmDialog.close();
+    } else {
+      confirmDialog?.classList.remove("modal--open");
+    }
+  }
+
+  async function handleDelete() {
+    if (deleteTargetId) {
+      // タスクの削除
+      try {
+        await request(`/api/tasks/${deleteTargetId}`, { method: "DELETE" });
+        state.tasks = state.tasks.filter((task) => task.id !== deleteTargetId);
+        renderBoard();
+        // プレビュー画面が表示されている場合は更新
+        if (
+          document
+            .getElementById("previewTab")
+            ?.classList.contains("tab-panel--active")
+        ) {
+          renderPreview();
+        }
+        // デンジャーリストが表示されている場合は更新
+        if (
+          document
+            .getElementById("dangerTab")
+            ?.classList.contains("tab-panel--active")
+        ) {
+          renderDangerList();
+        }
+        // 完了タブが表示されている場合は更新
+        if (
+          document
+            .getElementById("completedTab")
+            ?.classList.contains("tab-panel--active")
+        ) {
+          renderCompleted();
+        }
+        closeConfirm();
+        closeForm();
+      } catch (error) {
+        resetFormStatus(error.message || "削除に失敗しました");
+        closeConfirm();
+      }
+    } else if (deleteTargetStaffId) {
+      // メンバーの削除
+      try {
+        await request(`/api/staff/${deleteTargetStaffId}`, {
+          method: "DELETE",
+        });
+        state.staff = state.staff.filter((s) => s.id !== deleteTargetStaffId);
+        renderStaff();
+        renderBoard();
+        // プレビュー画面が表示されている場合は更新
+        if (
+          document
+            .getElementById("previewTab")
+            ?.classList.contains("tab-panel--active")
+        ) {
+          renderPreview();
+        }
+        // デンジャーリストが表示されている場合は更新
+        if (
+          document
+            .getElementById("dangerTab")
+            ?.classList.contains("tab-panel--active")
+        ) {
+          renderDangerList();
+        }
+        // 完了タブが表示されている場合は更新
+        if (
+          document
+            .getElementById("completedTab")
+            ?.classList.contains("tab-panel--active")
+        ) {
+          renderCompleted();
+        }
+        closeConfirm();
+        closeStaffForm();
+      } catch (error) {
+        resetStaffFormStatus(error.message || "メンバーの削除に失敗しました");
+        closeConfirm();
+      }
+    }
+  }
+
+  async function moveTask(taskId, quadrant) {
+    try {
+      const data = await request(`/api/tasks/${taskId}/quadrant`, {
+        method: "PATCH",
+        body: JSON.stringify({ quadrant }),
+      });
+      state.tasks = state.tasks.map((task) =>
+        task.id === data.id ? data : task
+      );
+      renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (
+        document
+          .getElementById("previewTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderPreview();
+      }
+      // デンジャーリストが表示されている場合は更新
+      if (
+        document
+          .getElementById("dangerTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderDangerList();
+      }
+      // 完了タブが表示されている場合は更新
+      if (
+        document
+          .getElementById("completedTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderCompleted();
+      }
+    } catch (error) {
+      resetFormStatus(error.message || "タスクの移動に失敗しました");
+    }
+  }
+
+  async function request(url, options = {}) {
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+    if (!response.ok) {
+      let message = "リクエストに失敗しました";
+      try {
+        const payload = await response.json();
+        if (typeof payload.detail === "string") message = payload.detail;
+      } catch (_) {
+        // ignore
+      }
+      throw new Error(message);
+    }
+    if (response.status === 204) return null;
+    return response.json();
+  }
+
+  function formatDate(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString("ja-JP", { month: "short", day: "numeric" });
+  }
+
+  // タブ切り替え機能
+  function switchTab(tabName) {
+    tabBtns.forEach((btn) => {
+      if (btn.dataset.tab === tabName) {
+        btn.classList.add("tab-btn--active");
+      } else {
+        btn.classList.remove("tab-btn--active");
+      }
+    });
+    tabPanels.forEach((panel) => {
+      if (panel.id === `${tabName}Tab`) {
+        panel.classList.add("tab-panel--active");
+      } else {
+        panel.classList.remove("tab-panel--active");
+      }
+    });
+    if (tabName === "preview") {
+      renderPreview();
+    } else if (tabName === "danger") {
+      renderDangerList();
+    } else if (tabName === "members") {
+      renderStaff();
+    } else if (tabName === "completed") {
+      renderCompleted();
+    }
+  }
+
+  // プレビュー画面のレンダリング
+  function renderPreview() {
+    renderQuadrantOverview();
+    renderStaffDistribution();
+  }
+
+  // 象限概要の表示（2x2マトリクス形式）
+  function renderQuadrantOverview() {
+    if (!quadrantOverviewEl) return;
+    quadrantOverviewEl.innerHTML = "";
+
+    // 象限ごとのアクションラベル（画像に合わせた表現）
+    const actionLabels = {
+      1: "やる",
+      2: "予定する",
+      3: "任せる",
+      4: "削除する",
+    };
+
+    // 象限の順序を2x2グリッドに合わせて調整（1=左上, 2=右上, 3=左下, 4=右下）
+    const quadrantOrder = [1, 2, 3, 4];
+
+    quadrantOrder.forEach((quadrant) => {
+      // 完了タスクを除外
+      const tasks = state.tasks.filter(
+        (task) => task.quadrant === quadrant && task.status !== "完了"
+      );
+      const face = state.faces[quadrant] || {};
+      const label = state.labels[quadrant] || "";
+      const action = actionLabels[quadrant] || "";
+
+      // 職員別のタスク数を集計（重複を避けるため、職員IDをキーに）
+      const staffMap = new Map();
+      tasks.forEach((task) => {
+        const owner = findStaff(task.owner_id);
+        if (owner) {
+          if (!staffMap.has(owner.id)) {
+            staffMap.set(owner.id, { staff: owner, count: 0 });
+          }
+          staffMap.get(owner.id).count++;
+        }
+      });
+
+      // 職員リストを配列に変換してソート（タスク数が多い順）
+      const staffList = Array.from(staffMap.values()).sort(
+        (a, b) => b.count - a.count
+      );
+
+      const summary = document.createElement("div");
+      summary.className = "quadrant-summary";
+      summary.dataset.quadrant = String(quadrant);
+      summary.innerHTML = `
+        <div class="quadrant-summary__header">
+          <h3 class="quadrant-summary__label">${label}</h3>
+          <p class="quadrant-summary__count">${tasks.length}</p>
+        </div>
+        <div class="quadrant-summary__staff-list">
+          ${
+            staffList.length > 0
+              ? staffList
+                  .map(
+                    ({ staff, count }) => `
+                  <div class="quadrant-summary__staff-item">
+                    <div class="quadrant-summary__staff-name">
+                      ${renderAvatar(staff, quadrant)}
+                      <span>${staff.name}</span>
+                    </div>
+                    <span class="quadrant-summary__staff-count">${count}件</span>
+                  </div>
+                `
+                  )
+                  .join("")
+              : ""
+          }
+        </div>
+      `;
+      quadrantOverviewEl.appendChild(summary);
+    });
+  }
+
+  // デンジャーリストのレンダリング
+  function renderDangerList() {
+    renderDangerGauge();
+    renderDangerStaffList();
+    renderDangerTaskList();
+  }
+
+  // デンジャーゲージの表示
+  function renderDangerGauge() {
+    if (!dangerGaugeEl) return;
+
+    const dangerTasks = state.tasks.filter(
+      (task) => task.quadrant === 1 && task.status !== "完了"
+    );
+    const count = dangerTasks.length;
+    const isDanger = count >= 3;
+    const percentage = Math.min((count / 3) * 100, 100);
+
+    dangerGaugeEl.innerHTML = `
+      <div class="danger-gauge">
+        <div class="danger-gauge__header">
+          <h2 class="danger-gauge__title">重要かつ緊急のタスク数</h2>
+          <div class="danger-gauge__count">${count}件</div>
+        </div>
+        <div class="danger-gauge__meter">
+          <div class="danger-gauge__fill" style="width: ${percentage}%"></div>
+        </div>
+        ${isDanger ? '<div class="danger-gauge__warning">危険</div>' : ""}
+      </div>
+    `;
+  }
+
+  // スタッフ別危険度の表示
+  function renderDangerStaffList() {
+    if (!dangerStaffListEl) return;
+
+    dangerStaffListEl.innerHTML = "";
+
+    // 各スタッフの第1象限タスク数を集計（完了タスクを除外）
+    const staffDangerMap = new Map();
+    const dangerTasks = state.tasks.filter(
+      (task) => task.quadrant === 1 && task.status !== "完了"
+    );
+
+    dangerTasks.forEach((task) => {
+      const owner = findStaff(task.owner_id);
+      if (owner) {
+        if (!staffDangerMap.has(owner.id)) {
+          staffDangerMap.set(owner.id, {
+            staff: owner,
+            count: 0,
+            tasks: [],
+          });
+        }
+        const entry = staffDangerMap.get(owner.id);
+        entry.count++;
+        entry.tasks.push(task);
+      }
+    });
+
+    // スタッフリストを配列に変換（第1象限タスク数が多い順、次に全スタッフ）
+    const staffWithDanger = Array.from(staffDangerMap.values()).sort(
+      (a, b) => b.count - a.count
+    );
+    const staffWithoutDanger = state.staff
+      .filter((staff) => !staffDangerMap.has(staff.id))
+      .map((staff) => ({ staff, count: 0, tasks: [] }));
+
+    const allStaff = [...staffWithDanger, ...staffWithoutDanger];
+
+    if (allStaff.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "danger-staff-list__empty";
+      empty.textContent = "スタッフが登録されていません";
+      dangerStaffListEl.appendChild(empty);
+      return;
+    }
+
+    allStaff.forEach(({ staff, count, tasks }) => {
+      const isDanger = count >= 3;
+      const percentage = Math.min((count / 3) * 100, 100);
+
+      const card = document.createElement("article");
+      card.className = `danger-staff-card ${
+        isDanger ? "danger-staff-card--danger" : ""
+      }`;
+      card.innerHTML = `
+        <div class="danger-staff-card__header">
+          <div class="danger-staff-card__info">
+            ${renderAvatar(staff, 1)}
+            <div class="danger-staff-card__details">
+              <h3 class="danger-staff-card__name">${staff.name}</h3>
+              <p class="danger-staff-card__dept">${staff.department || ""}</p>
+            </div>
+          </div>
+          <div class="danger-staff-card__count ${
+            isDanger ? "danger-staff-card__count--danger" : ""
+          }">
+            ${count}件
+          </div>
+        </div>
+        <div class="danger-staff-card__gauge">
+          <div class="danger-staff-card__gauge-fill" style="width: ${percentage}%"></div>
+        </div>
+        ${isDanger ? '<div class="danger-staff-card__warning">危険</div>' : ""}
+        ${
+          tasks.length > 0
+            ? `
+          <div class="danger-staff-card__tasks">
+            ${tasks
+              .map(
+                (task) => `
+              <div class="danger-staff-card__task-item" data-task-id="${
+                task.id
+              }">
+                <span class="danger-staff-card__task-title">${task.title}</span>
+                <span class="danger-staff-card__task-status badge ${
+                  state.statusColors[task.status] || "badge--todo"
+                }">${task.status || ""}</span>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        `
+            : ""
+        }
+      `;
+
+      // タスクアイテムにクリックイベントを追加
+      card.querySelectorAll(".danger-staff-card__task-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const taskId = Number(item.dataset.taskId);
+          if (taskId) {
+            openForm(taskId);
+          }
+        });
+      });
+
+      dangerStaffListEl.appendChild(card);
+    });
+  }
+
+  // デンジャータスクリストの表示
+  function renderDangerTaskList() {
+    if (!dangerListEl) return;
+
+    const dangerTasks = state.tasks.filter(
+      (task) => task.quadrant === 1 && task.status !== "完了"
+    );
+    dangerListEl.innerHTML = "";
+
+    if (dangerTasks.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "danger-list__empty";
+      empty.textContent = "重要かつ緊急のタスクはありません";
+      dangerListEl.appendChild(empty);
+      return;
+    }
+
+    sortTasks(dangerTasks).forEach((task) => {
+      const card = buildDangerTaskCard(task);
+      dangerListEl.appendChild(card);
+    });
+  }
+
+  // デンジャータスクカードの構築
+  function buildDangerTaskCard(task) {
+    const card = document.createElement("article");
+    card.className = "danger-task-card";
+    card.dataset.taskId = String(task.id);
+    card.addEventListener("click", () => openForm(task.id));
+
+    const owner = findStaff(task.owner_id);
+    const statusClass = state.statusColors[task.status] || "badge--todo";
+    const priorityClass = priorityClassMap[task.priority] || "low";
+
+    card.innerHTML = `
+      <header class="danger-task-card__header">
+        <span class="danger-task-card__priority danger-task-card__priority--${priorityClass}">
+          ${task.priority || ""}
+        </span>
+        <span class="badge ${statusClass}">${task.status || ""}</span>
+      </header>
+      <h3 class="danger-task-card__title">${task.title}</h3>
+      ${
+        task.description
+          ? `<p class="danger-task-card__description">${task.description}</p>`
+          : ""
+      }
+      <dl class="danger-task-card__meta">
+        <div>
+          <dt>担当者</dt>
+          <dd>
+            ${renderAvatar(owner, 1)}
+            ${owner ? owner.name : "-"}
+            ${owner && owner.department ? `(${owner.department})` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>期限</dt>
+          <dd>${formatDate(task.due_date)}</dd>
+        </div>
+        ${
+          task.created_by
+            ? `
+        <div>
+          <dt>作成者</dt>
+          <dd>${task.created_by}</dd>
+        </div>
+        `
+            : ""
+        }
+      </dl>
+    `;
+    return card;
+  }
+
+  // 完了タスクのレンダリング
+  function renderCompleted() {
+    if (!completedListEl) return;
+    completedListEl.innerHTML = "";
+
+    const completedTasks = state.tasks.filter((task) => task.status === "完了");
+
+    if (completedTasks.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "completed-list__empty";
+      empty.textContent = "完了したタスクはありません";
+      completedListEl.appendChild(empty);
+      return;
+    }
+
+    // ソート処理
+    const priorityOrder = { 高: 1, 中: 2, 低: 3 };
+    const sortedTasks = [...completedTasks].sort((a, b) => {
+      if (completedSortOrder.startsWith("date-")) {
+        // 日付でソート
+        const dateA = a.due_date || "";
+        const dateB = b.due_date || "";
+        if (completedSortOrder === "date-asc") {
+          return dateA.localeCompare(dateB);
+        } else {
+          return dateB.localeCompare(dateA);
+        }
+      } else if (completedSortOrder.startsWith("priority-")) {
+        // 優先度でソート
+        const priorityA = priorityOrder[a.priority] || 2;
+        const priorityB = priorityOrder[b.priority] || 2;
+        if (completedSortOrder === "priority-asc") {
+          return priorityA - priorityB;
+        } else {
+          return priorityB - priorityA;
+        }
+      }
+      return 0;
+    });
+
+    // 象限ごとにグループ化
+    const tasksByQuadrant = { 1: [], 2: [], 3: [], 4: [] };
+    sortedTasks.forEach((task) => {
+      const q = task.quadrant || 1;
+      if (tasksByQuadrant[q]) {
+        tasksByQuadrant[q].push(task);
+      }
+    });
+
+    // 各象限のタスクを表示
+    quadrants.forEach((quadrant) => {
+      const quadrantTasks = tasksByQuadrant[quadrant];
+      if (quadrantTasks.length === 0) return;
+
+      const section = document.createElement("section");
+      section.className = "completed-quadrant";
+      const header = document.createElement("div");
+      header.className = "completed-quadrant__header";
+      header.innerHTML = `<h3>${state.labels[quadrant] || ""} (${
+        quadrantTasks.length
+      }件)</h3>`;
+      section.appendChild(header);
+
+      const taskContainer = document.createElement("div");
+      taskContainer.className = "completed-quadrant__tasks";
+
+      quadrantTasks.forEach((task) => {
+        taskContainer.appendChild(buildTaskCard(task));
+      });
+
+      section.appendChild(taskContainer);
+      completedListEl.appendChild(section);
+    });
+  }
+
+  // 職員別タスク分布の表示
+  function renderStaffDistribution() {
+    if (!staffDistributionEl) return;
+    staffDistributionEl.innerHTML = "";
+
+    state.staff.forEach((staff) => {
+      // 各職員の象限別タスク数を集計（完了タスクを除外）
+      const quadrantCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+      const staffTasks = state.tasks.filter(
+        (task) => task.owner_id === staff.id && task.status !== "完了"
+      );
+      staffTasks.forEach((task) => {
+        const q = task.quadrant || 1;
+        quadrantCounts[q] = (quadrantCounts[q] || 0) + 1;
+      });
+
+      const total = staffTasks.length;
+      const maxCount = Math.max(...Object.values(quadrantCounts), 1);
+
+      const item = document.createElement("div");
+      item.className = "staff-distribution-item";
+      item.innerHTML = `
+        <div class="staff-distribution-item__header">
+          <div class="staff-distribution-item__title-row">
+            <h3 class="staff-distribution-item__name">${staff.name}</h3>
+            <div class="staff-distribution-item__total">${total}件</div>
+          </div>
+          <div class="staff-distribution-item__info">
+            ${renderAvatar(staff)}
+            <p class="staff-distribution-item__dept">${
+              staff.department || ""
+            }</p>
+          </div>
+        </div>
+        <div class="staff-distribution-item__quadrants">
+          ${quadrants
+            .map((q) => {
+              const count = quadrantCounts[q] || 0;
+              const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+              const qClass = `quadrant-bar__fill--q${q}`;
+              return `
+                <div class="quadrant-bar">
+                  <div class="quadrant-bar__label">${
+                    state.labels[q] || ""
+                  }</div>
+                  <div class="quadrant-bar__container">
+                    <div class="quadrant-bar__fill ${qClass}" style="height: ${height}%"></div>
+                  </div>
+                  <div class="quadrant-bar__value">${count}</div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `;
+      staffDistributionEl.appendChild(item);
+    });
+  }
+
+  // Event wiring
+  addBtn?.addEventListener("click", () => openForm(null));
+  cancelBtn?.addEventListener("click", closeForm);
+  form?.addEventListener("submit", handleSubmit);
+  form?.owner_id?.addEventListener("change", updateOwnerHint);
+  // 期限フィールドのクリック時にカレンダーを表示
+  if (form?.due_date) {
+    form.due_date.addEventListener("click", async () => {
+      // showPicker()メソッドがサポートされている場合は使用
+      // これにより、クリック時にカレンダーが確実に表示されます
+      if (typeof form.due_date.showPicker === "function") {
+        try {
+          await form.due_date.showPicker();
+        } catch (error) {
+          // showPicker()が失敗した場合は、通常のフォーカス処理にフォールバック
+          form.due_date.focus();
+        }
+      } else {
+        // showPicker()がサポートされていない場合は、フォーカスを設定
+        form.due_date.focus();
+      }
+    });
+  }
+  deleteBtn?.addEventListener("click", () => {
+    if (editingId) {
+      confirmDelete(editingId);
+    }
+  });
+  confirmDeleteBtn?.addEventListener("click", handleDelete);
+  confirmCancelBtn?.addEventListener("click", closeConfirm);
+  confirmCloseBtn?.addEventListener("click", closeConfirm);
+
+  // メンバー追加/編集フォーム
+  function openStaffForm(staffId = null) {
+    if (!staffForm) return;
+    editingStaffId = staffId;
+    resetStaffFormStatus();
+
+    if (staffId) {
+      const staff = state.staff.find((s) => s.id === staffId);
+      if (!staff) return;
+      staffFormTitle.textContent = "メンバーを編集";
+      submitStaffBtn.textContent = "更新";
+      deleteStaffBtn.style.display = "inline-flex";
+      if (formStaffId) formStaffId.value = staff.id;
+      staffForm.staff_name.value = staff.name || "";
+      staffForm.staff_department.value = staff.department || "";
+      staffForm.staff_photo.value = "";
+    } else {
+      staffFormTitle.textContent = "メンバーを追加";
+      submitStaffBtn.textContent = "追加";
+      deleteStaffBtn.style.display = "none";
+      staffForm.reset();
+      editingStaffId = null;
+    }
+
+    if (typeof staffDialog?.showModal === "function") {
+      staffDialog.showModal();
+    } else {
+      staffDialog?.classList.add("modal--open");
+    }
+  }
+
+  function closeStaffForm() {
+    if (typeof staffDialog?.close === "function") {
+      staffDialog.close();
+    } else {
+      staffDialog?.classList.remove("modal--open");
+    }
+    if (staffForm) {
+      staffForm.reset();
+    }
+    editingStaffId = null;
+  }
+
+  function resetStaffFormStatus(message = "") {
+    if (staffFormStatus) {
+      staffFormStatus.textContent = message;
+    }
+  }
+
+  async function handleStaffSubmit(event) {
+    event.preventDefault();
+    if (!staffForm) return;
+
+    const formData = new FormData(staffForm);
+    const url = editingStaffId ? `/api/staff/${editingStaffId}` : "/api/staff";
+    const method = editingStaffId ? "PUT" : "POST";
+
+    try {
+      const response = await fetch(url, {
+        method,
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let message = editingStaffId
+          ? "メンバーの更新に失敗しました"
+          : "メンバーの追加に失敗しました";
+        try {
+          const payload = await response.json();
+          if (typeof payload.detail === "string") message = payload.detail;
+        } catch (_) {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+      if (editingStaffId) {
+        state.staff = state.staff.map((s) => (s.id === data.id ? data : s));
+      } else {
+        state.staff = [...state.staff, data];
+      }
+      renderStaff();
+      renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (
+        document
+          .getElementById("previewTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderPreview();
+      }
+      // デンジャーリストが表示されている場合は更新
+      if (
+        document
+          .getElementById("dangerTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderDangerList();
+      }
+      // 完了タブが表示されている場合は更新
+      if (
+        document
+          .getElementById("completedTab")
+          ?.classList.contains("tab-panel--active")
+      ) {
+        renderCompleted();
+      }
+      closeStaffForm();
+    } catch (error) {
+      resetStaffFormStatus(
+        error.message ||
+          (editingStaffId
+            ? "メンバーの更新に失敗しました"
+            : "メンバーの追加に失敗しました")
+      );
+    }
+  }
+
+  addStaffBtn?.addEventListener("click", () => openStaffForm(null));
+  cancelStaffBtn?.addEventListener("click", closeStaffForm);
+  staffForm?.addEventListener("submit", handleStaffSubmit);
+  deleteStaffBtn?.addEventListener("click", () => {
+    if (editingStaffId) {
+      confirmDeleteStaff(editingStaffId);
+    }
+  });
+
+  // 完了タブのソート機能
+  completedSortOrderEl?.addEventListener("change", (e) => {
+    completedSortOrder = e.target.value;
+    renderCompleted();
+  });
+
+  // タブボタンのイベント
+  tabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  renderBoard();
+  renderStaff();
+})();

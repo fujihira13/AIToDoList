@@ -204,7 +204,7 @@
         <div class="form-grid">
           <label class="form-field">
             <span>名前 *</span>
-            <input type="text" name="name" id="staff_name" maxlength="50" required placeholder="メンバーの名前を入力してください" />
+            <input type="text" name="staff_name" id="staff_name" maxlength="50" required placeholder="メンバーの名前を入力してください" />
           </label>
 
           <label class="form-field">
@@ -254,6 +254,6 @@
     </footer>
 
     <script id="initial-data" type="application/json">{{ initial_payload | tojson }}</script>
-    <script src="/static/app.js" defer></script>
+    <script type="module" src="/static/app.js"></script>
   </body>
 </html>

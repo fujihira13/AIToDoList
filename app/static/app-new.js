@@ -3,12 +3,7 @@
  * 初期化とイベントリスナーの設定を行います
  */
 
-import {
-  elements,
-  getEditingId,
-  getEditingStaffId,
-  setCompletedSortOrder,
-} from "./state.js";
+import { elements, getEditingId, getEditingStaffId, setCompletedSortOrder } from "./state.js";
 import {
   openForm,
   closeForm,
@@ -22,7 +17,6 @@ import {
   handleStaffSubmit,
   confirmDeleteStaff,
   switchTab,
-  moveTask,
 } from "./events.js";
 import { renderBoard, renderStaff } from "./render.js";
 
@@ -91,19 +85,6 @@ function init() {
     });
   });
 
-  // カスタムイベントのリスナー（循環参照を避けるため）
-  document.addEventListener("openTaskForm", (event) => {
-    openForm(event.detail.taskId);
-  });
-
-  document.addEventListener("openStaffForm", (event) => {
-    openStaffForm(event.detail.staffId);
-  });
-
-  document.addEventListener("moveTask", (event) => {
-    moveTask(event.detail.taskId, event.detail.quadrant);
-  });
-
   // 初期レンダリング
   renderBoard();
   renderStaff();
@@ -115,3 +96,4 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
+
