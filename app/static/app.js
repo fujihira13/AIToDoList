@@ -45,6 +45,9 @@
   const tabPanels = document.querySelectorAll(".tab-panel");
   const quadrantOverviewEl = document.getElementById("quadrantOverview");
   const staffDistributionEl = document.getElementById("staffDistribution");
+  const dangerGaugeEl = document.getElementById("dangerGauge");
+  const dangerStaffListEl = document.getElementById("dangerStaffList");
+  const dangerListEl = document.getElementById("dangerList");
 
   let editingId = null;
   let deleteTargetId = null;
@@ -286,6 +289,10 @@
       if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
         renderPreview();
       }
+      // デンジャーリストが表示されている場合は更新
+      if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
+        renderDangerList();
+      }
       closeForm();
     } catch (error) {
       resetFormStatus(error.message || "保存に失敗しました");
@@ -330,6 +337,10 @@
       if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
         renderPreview();
       }
+      // デンジャーリストが表示されている場合は更新
+      if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
+        renderDangerList();
+      }
       closeConfirm();
       closeForm();
     } catch (error) {
@@ -349,6 +360,10 @@
       // プレビュー画面が表示されている場合は更新
       if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
         renderPreview();
+      }
+      // デンジャーリストが表示されている場合は更新
+      if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
+        renderDangerList();
       }
     } catch (error) {
       resetFormStatus(error.message || "タスクの移動に失敗しました");
@@ -399,6 +414,8 @@
     });
     if (tabName === "preview") {
       renderPreview();
+    } else if (tabName === "danger") {
+      renderDangerList();
     }
   }
 
@@ -471,6 +488,193 @@
       `;
       quadrantOverviewEl.appendChild(summary);
     });
+  }
+
+  // デンジャーリストのレンダリング
+  function renderDangerList() {
+    renderDangerGauge();
+    renderDangerStaffList();
+    renderDangerTaskList();
+  }
+
+  // デンジャーゲージの表示
+  function renderDangerGauge() {
+    if (!dangerGaugeEl) return;
+    
+    const dangerTasks = state.tasks.filter((task) => task.quadrant === 1 && task.status !== "完了");
+    const count = dangerTasks.length;
+    const isDanger = count >= 3;
+    const percentage = Math.min((count / 3) * 100, 100);
+    
+    dangerGaugeEl.innerHTML = `
+      <div class="danger-gauge">
+        <div class="danger-gauge__header">
+          <h2 class="danger-gauge__title">重要かつ緊急のタスク数</h2>
+          <div class="danger-gauge__count">${count}件</div>
+        </div>
+        <div class="danger-gauge__meter">
+          <div class="danger-gauge__fill" style="width: ${percentage}%"></div>
+        </div>
+        ${isDanger ? '<div class="danger-gauge__warning">危険</div>' : ''}
+      </div>
+    `;
+  }
+
+  // スタッフ別危険度の表示
+  function renderDangerStaffList() {
+    if (!dangerStaffListEl) return;
+    
+    dangerStaffListEl.innerHTML = "";
+    
+    // 各スタッフの第1象限タスク数を集計（完了タスクを除外）
+    const staffDangerMap = new Map();
+    const dangerTasks = state.tasks.filter((task) => task.quadrant === 1 && task.status !== "完了");
+    
+    dangerTasks.forEach((task) => {
+      const owner = findStaff(task.owner_id);
+      if (owner) {
+        if (!staffDangerMap.has(owner.id)) {
+          staffDangerMap.set(owner.id, {
+            staff: owner,
+            count: 0,
+            tasks: []
+          });
+        }
+        const entry = staffDangerMap.get(owner.id);
+        entry.count++;
+        entry.tasks.push(task);
+      }
+    });
+    
+    // スタッフリストを配列に変換（第1象限タスク数が多い順、次に全スタッフ）
+    const staffWithDanger = Array.from(staffDangerMap.values()).sort((a, b) => b.count - a.count);
+    const staffWithoutDanger = state.staff
+      .filter((staff) => !staffDangerMap.has(staff.id))
+      .map((staff) => ({ staff, count: 0, tasks: [] }));
+    
+    const allStaff = [...staffWithDanger, ...staffWithoutDanger];
+    
+    if (allStaff.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "danger-staff-list__empty";
+      empty.textContent = "スタッフが登録されていません";
+      dangerStaffListEl.appendChild(empty);
+      return;
+    }
+    
+    allStaff.forEach(({ staff, count, tasks }) => {
+      const isDanger = count >= 3;
+      const percentage = Math.min((count / 3) * 100, 100);
+      
+      const card = document.createElement("article");
+      card.className = `danger-staff-card ${isDanger ? "danger-staff-card--danger" : ""}`;
+      card.innerHTML = `
+        <div class="danger-staff-card__header">
+          <div class="danger-staff-card__info">
+            ${renderAvatar(staff, 1)}
+            <div class="danger-staff-card__details">
+              <h3 class="danger-staff-card__name">${staff.name}</h3>
+              <p class="danger-staff-card__dept">${staff.department || ""}</p>
+            </div>
+          </div>
+          <div class="danger-staff-card__count ${isDanger ? "danger-staff-card__count--danger" : ""}">
+            ${count}件
+          </div>
+        </div>
+        <div class="danger-staff-card__gauge">
+          <div class="danger-staff-card__gauge-fill" style="width: ${percentage}%"></div>
+        </div>
+        ${isDanger ? '<div class="danger-staff-card__warning">危険</div>' : ''}
+        ${tasks.length > 0 ? `
+          <div class="danger-staff-card__tasks">
+            ${tasks.map((task) => `
+              <div class="danger-staff-card__task-item" data-task-id="${task.id}">
+                <span class="danger-staff-card__task-title">${task.title}</span>
+                <span class="danger-staff-card__task-status badge ${state.statusColors[task.status] || "badge--todo"}">${task.status || ""}</span>
+              </div>
+            `).join("")}
+          </div>
+        ` : ""}
+      `;
+      
+      // タスクアイテムにクリックイベントを追加
+      card.querySelectorAll(".danger-staff-card__task-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const taskId = Number(item.dataset.taskId);
+          if (taskId) {
+            openForm(taskId);
+          }
+        });
+      });
+      
+      dangerStaffListEl.appendChild(card);
+    });
+  }
+
+  // デンジャータスクリストの表示
+  function renderDangerTaskList() {
+    if (!dangerListEl) return;
+    
+    const dangerTasks = state.tasks.filter((task) => task.quadrant === 1 && task.status !== "完了");
+    dangerListEl.innerHTML = "";
+    
+    if (dangerTasks.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "danger-list__empty";
+      empty.textContent = "重要かつ緊急のタスクはありません";
+      dangerListEl.appendChild(empty);
+      return;
+    }
+    
+    sortTasks(dangerTasks).forEach((task) => {
+      const card = buildDangerTaskCard(task);
+      dangerListEl.appendChild(card);
+    });
+  }
+
+  // デンジャータスクカードの構築
+  function buildDangerTaskCard(task) {
+    const card = document.createElement("article");
+    card.className = "danger-task-card";
+    card.dataset.taskId = String(task.id);
+    card.addEventListener("click", () => openForm(task.id));
+
+    const owner = findStaff(task.owner_id);
+    const statusClass = state.statusColors[task.status] || "badge--todo";
+    const priorityClass = priorityClassMap[task.priority] || "low";
+
+    card.innerHTML = `
+      <header class="danger-task-card__header">
+        <span class="danger-task-card__priority danger-task-card__priority--${priorityClass}">
+          ${task.priority || ""}
+        </span>
+        <span class="badge ${statusClass}">${task.status || ""}</span>
+      </header>
+      <h3 class="danger-task-card__title">${task.title}</h3>
+      ${task.description ? `<p class="danger-task-card__description">${task.description}</p>` : ""}
+      <dl class="danger-task-card__meta">
+        <div>
+          <dt>担当者</dt>
+          <dd>
+            ${renderAvatar(owner, 1)}
+            ${owner ? owner.name : "-"}
+            ${owner && owner.department ? `(${owner.department})` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>期限</dt>
+          <dd>${formatDate(task.due_date)}</dd>
+        </div>
+        ${task.created_by ? `
+        <div>
+          <dt>作成者</dt>
+          <dd>${task.created_by}</dd>
+        </div>
+        ` : ""}
+      </dl>
+    `;
+    return card;
   }
 
   // 職員別タスク分布の表示
@@ -597,6 +801,10 @@
       // プレビュー画面が表示されている場合は更新
       if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
         renderPreview();
+      }
+      // デンジャーリストが表示されている場合は更新
+      if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
+        renderDangerList();
       }
       closeStaffForm();
     } catch (error) {

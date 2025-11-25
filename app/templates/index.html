@@ -29,6 +29,9 @@
         <button type="button" class="tab-btn" data-tab="preview">
           プレビュー
         </button>
+        <button type="button" class="tab-btn" data-tab="danger">
+          デンジャーリスト
+        </button>
       </div>
       <div class="tabs__content">
         <div class="tab-panel tab-panel--active" id="boardTab">
@@ -49,6 +52,19 @@
             <section class="preview-section">
               <h2 class="preview-section__title">職員別タスク分布</h2>
               <div class="staff-distribution" id="staffDistribution"></div>
+            </section>
+          </div>
+        </div>
+        <div class="tab-panel" id="dangerTab">
+          <div class="danger-container">
+            <div class="danger-gauge-container" id="dangerGauge"></div>
+            <section class="danger-section">
+              <h2 class="danger-section__title">スタッフ別危険度</h2>
+              <div class="danger-staff-list" id="dangerStaffList"></div>
+            </section>
+            <section class="danger-section">
+              <h2 class="danger-section__title">重要かつ緊急のタスク一覧</h2>
+              <div class="danger-list" id="dangerList"></div>
             </section>
           </div>
         </div>
