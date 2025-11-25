@@ -35,6 +35,9 @@
         <button type="button" class="tab-btn" data-tab="members">
           メンバー
         </button>
+        <button type="button" class="tab-btn" data-tab="completed">
+          完了
+        </button>
       </div>
       <div class="tabs__content">
         <div class="tab-panel tab-panel--active" id="boardTab">
@@ -72,6 +75,17 @@
                 <p>{{ copy.staff_sub }}</p>
               </div>
               <div id="staffList" class="staff-list"></div>
+            </section>
+          </div>
+        </div>
+        <div class="tab-panel" id="completedTab">
+          <div class="completed-container">
+            <section class="completed-section">
+              <div class="completed-panel__header">
+                <h2>完了したタスク</h2>
+                <p>ステータスが「完了」のタスクを表示します。</p>
+              </div>
+              <div id="completedList" class="completed-list"></div>
             </section>
           </div>
         </div>

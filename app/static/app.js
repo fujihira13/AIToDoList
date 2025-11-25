@@ -48,6 +48,7 @@
   const dangerGaugeEl = document.getElementById("dangerGauge");
   const dangerStaffListEl = document.getElementById("dangerStaffList");
   const dangerListEl = document.getElementById("dangerList");
+  const completedListEl = document.getElementById("completedList");
 
   let editingId = null;
   let deleteTargetId = null;
@@ -55,10 +56,16 @@
   const quadrants = [1, 2, 3, 4];
 
   function sortTasks(list) {
+    const priorityOrder = { "高": 1, "中": 2, "低": 3 };
     return [...list].sort((a, b) => {
       const qa = a.quadrant || 4;
       const qb = b.quadrant || 4;
       if (qa !== qb) return qa - qb;
+      // 優先度でソート（高い順）
+      const pa = priorityOrder[a.priority] || 2;
+      const pb = priorityOrder[b.priority] || 2;
+      if (pa !== pb) return pa - pb;
+      // 優先度が同じ場合は期限でソート
       const da = a.due_date || "9999-12-31";
       const db = b.due_date || "9999-12-31";
       return da.localeCompare(db);
@@ -103,7 +110,8 @@
       const body = document.createElement("div");
       body.className = "quadrant__body";
 
-      const tasks = state.tasks.filter((task) => task.quadrant === quadrant);
+      // 完了タスクを除外
+      const tasks = state.tasks.filter((task) => task.quadrant === quadrant && task.status !== "完了");
       counter.textContent = `${tasks.length} 件`;
 
       if (tasks.length === 0) {
@@ -292,6 +300,10 @@
       if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
         renderDangerList();
       }
+      // 完了タブが表示されている場合は更新
+      if (document.getElementById("completedTab")?.classList.contains("tab-panel--active")) {
+        renderCompleted();
+      }
       closeForm();
     } catch (error) {
       resetFormStatus(error.message || "保存に失敗しました");
@@ -340,6 +352,10 @@
       if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
         renderDangerList();
       }
+      // 完了タブが表示されている場合は更新
+      if (document.getElementById("completedTab")?.classList.contains("tab-panel--active")) {
+        renderCompleted();
+      }
       closeConfirm();
       closeForm();
     } catch (error) {
@@ -363,6 +379,10 @@
       // デンジャーリストが表示されている場合は更新
       if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
         renderDangerList();
+      }
+      // 完了タブが表示されている場合は更新
+      if (document.getElementById("completedTab")?.classList.contains("tab-panel--active")) {
+        renderCompleted();
       }
     } catch (error) {
       resetFormStatus(error.message || "タスクの移動に失敗しました");
@@ -417,6 +437,8 @@
       renderDangerList();
     } else if (tabName === "members") {
       renderStaff();
+    } else if (tabName === "completed") {
+      renderCompleted();
     }
   }
 
@@ -443,7 +465,8 @@
     const quadrantOrder = [1, 2, 3, 4];
     
     quadrantOrder.forEach((quadrant) => {
-      const tasks = state.tasks.filter((task) => task.quadrant === quadrant);
+      // 完了タスクを除外
+      const tasks = state.tasks.filter((task) => task.quadrant === quadrant && task.status !== "完了");
       const face = state.faces[quadrant] || {};
       const label = state.labels[quadrant] || "";
       const action = actionLabels[quadrant] || "";
@@ -678,15 +701,63 @@
     return card;
   }
 
+  // 完了タスクのレンダリング
+  function renderCompleted() {
+    if (!completedListEl) return;
+    completedListEl.innerHTML = "";
+    
+    const completedTasks = state.tasks.filter((task) => task.status === "完了");
+    
+    if (completedTasks.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "completed-list__empty";
+      empty.textContent = "完了したタスクはありません";
+      completedListEl.appendChild(empty);
+      return;
+    }
+    
+    // 象限ごとにグループ化
+    const tasksByQuadrant = { 1: [], 2: [], 3: [], 4: [] };
+    completedTasks.forEach((task) => {
+      const q = task.quadrant || 1;
+      if (tasksByQuadrant[q]) {
+        tasksByQuadrant[q].push(task);
+      }
+    });
+    
+    // 各象限のタスクを表示
+    quadrants.forEach((quadrant) => {
+      const quadrantTasks = tasksByQuadrant[quadrant];
+      if (quadrantTasks.length === 0) return;
+      
+      const section = document.createElement("section");
+      section.className = "completed-quadrant";
+      const header = document.createElement("div");
+      header.className = "completed-quadrant__header";
+      header.innerHTML = `<h3>${state.labels[quadrant] || ""} (${quadrantTasks.length}件)</h3>`;
+      section.appendChild(header);
+      
+      const taskContainer = document.createElement("div");
+      taskContainer.className = "completed-quadrant__tasks";
+      
+      sortTasks(quadrantTasks).forEach((task) => {
+        taskContainer.appendChild(buildTaskCard(task));
+      });
+      
+      section.appendChild(taskContainer);
+      completedListEl.appendChild(section);
+    });
+  }
+
   // 職員別タスク分布の表示
   function renderStaffDistribution() {
     if (!staffDistributionEl) return;
     staffDistributionEl.innerHTML = "";
     
     state.staff.forEach((staff) => {
-      // 各職員の象限別タスク数を集計
+      // 各職員の象限別タスク数を集計（完了タスクを除外）
       const quadrantCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
-      const staffTasks = state.tasks.filter((task) => task.owner_id === staff.id);
+      const staffTasks = state.tasks.filter((task) => task.owner_id === staff.id && task.status !== "完了");
       staffTasks.forEach((task) => {
         const q = task.quadrant || 1;
         quadrantCounts[q] = (quadrantCounts[q] || 0) + 1;
@@ -806,6 +877,10 @@
       // デンジャーリストが表示されている場合は更新
       if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
         renderDangerList();
+      }
+      // 完了タブが表示されている場合は更新
+      if (document.getElementById("completedTab")?.classList.contains("tab-panel--active")) {
+        renderCompleted();
       }
       closeStaffForm();
     } catch (error) {
