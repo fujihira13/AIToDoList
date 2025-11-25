@@ -9,7 +9,7 @@
   <body>
     <header class="page-header">
       <div>
-        <h1>{{ copy.page_title }}</h1>
+        {% if copy.page_title %}<h1>{{ copy.page_title }}</h1>{% endif %}
       </div>
       <div class="header-actions">
         <button type="button" class="btn btn--primary" id="addTaskBtn">
@@ -32,18 +32,14 @@
         <button type="button" class="tab-btn" data-tab="danger">
           デンジャーリスト
         </button>
+        <button type="button" class="tab-btn" data-tab="members">
+          メンバー
+        </button>
       </div>
       <div class="tabs__content">
         <div class="tab-panel tab-panel--active" id="boardTab">
           <main class="layout">
             <section class="board" id="board" aria-live="polite"></section>
-            <aside class="staff-panel">
-              <div class="staff-panel__header">
-                <h2>{{ copy.staff_title }}</h2>
-                <p>{{ copy.staff_sub }}</p>
-              </div>
-              <div id="staffList" class="staff-list"></div>
-            </aside>
           </main>
         </div>
         <div class="tab-panel" id="previewTab">
@@ -65,6 +61,17 @@
             <section class="danger-section">
               <h2 class="danger-section__title">重要かつ緊急のタスク一覧</h2>
               <div class="danger-list" id="dangerList"></div>
+            </section>
+          </div>
+        </div>
+        <div class="tab-panel" id="membersTab">
+          <div class="members-container">
+            <section class="members-section">
+              <div class="staff-panel__header">
+                <h2>{{ copy.staff_title }}</h2>
+                <p>{{ copy.staff_sub }}</p>
+              </div>
+              <div id="staffList" class="staff-list"></div>
             </section>
           </div>
         </div>
@@ -221,8 +228,7 @@
       </div>
     </dialog>
 
-    <footer class="page-footer">
-      <p>{{ copy.footnote }}</p>
+    <footer class="page-footer" style="display: none;">
     </footer>
 
     <script id="initial-data" type="application/json">{{ initial_payload | tojson }}</script>

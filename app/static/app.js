@@ -93,7 +93,6 @@
       const face = state.faces[quadrant] || {};
       header.innerHTML = `
         <div>
-          <p class="quadrant__number">第${quadrant}象限</p>
           <h2>${state.labels[quadrant] || ""}</h2>
         </div>
         <span class="quadrant__count"></span>
@@ -416,6 +415,8 @@
       renderPreview();
     } else if (tabName === "danger") {
       renderDangerList();
+    } else if (tabName === "members") {
+      renderStaff();
     }
   }
 
@@ -715,7 +716,7 @@
               const qClass = `quadrant-bar__fill--q${q}`;
               return `
                 <div class="quadrant-bar">
-                  <div class="quadrant-bar__label">第${q}象限</div>
+                  <div class="quadrant-bar__label">${state.labels[q] || ""}</div>
                   <div class="quadrant-bar__container">
                     <div class="quadrant-bar__fill ${qClass}" style="height: ${height}%"></div>
                   </div>
