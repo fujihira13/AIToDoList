@@ -92,7 +92,6 @@
         <div>
           <p class="quadrant__number">第${quadrant}象限</p>
           <h2>${state.labels[quadrant] || ""}</h2>
-          <p class="quadrant__face">${face.emoji || ""} ${face.caption || ""}</p>
         </div>
         <span class="quadrant__count"></span>
       `;
@@ -451,10 +450,9 @@
       summary.dataset.quadrant = String(quadrant);
       summary.innerHTML = `
         <div class="quadrant-summary__header">
-          <p class="quadrant-summary__face">${face.emoji || ""} ${face.caption || ""}</p>
           <h3 class="quadrant-summary__label">${label}</h3>
+          <p class="quadrant-summary__count">${tasks.length}</p>
         </div>
-        <p class="quadrant-summary__count">${tasks.length}</p>
         <div class="quadrant-summary__staff-list">
           ${staffList.length > 0
             ? staffList
