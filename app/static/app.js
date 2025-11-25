@@ -42,6 +42,7 @@
   const confirmDialog = document.getElementById("confirmDialog");
   const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
   const confirmCancelBtn = document.getElementById("confirmCancelBtn");
+  const confirmCloseBtn = document.getElementById("confirmCloseBtn");
   const tabBtns = document.querySelectorAll(".tab-btn");
   const tabPanels = document.querySelectorAll(".tab-panel");
   const quadrantOverviewEl = document.getElementById("quadrantOverview");
@@ -1005,6 +1006,7 @@
   });
   confirmDeleteBtn?.addEventListener("click", handleDelete);
   confirmCancelBtn?.addEventListener("click", closeConfirm);
+  confirmCloseBtn?.addEventListener("click", closeConfirm);
 
   // メンバー追加/編集フォーム
   function openStaffForm(staffId = null) {

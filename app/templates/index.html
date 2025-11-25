@@ -231,6 +231,12 @@
     </dialog>
 
     <dialog id="confirmDialog" class="modal modal--confirm">
+      <header class="modal__header">
+        <div></div>
+        <button type="button" class="btn btn--close" id="confirmCloseBtn" aria-label="閉じる">
+          ×
+        </button>
+      </header>
       <div class="modal__body">
         <p id="confirmMessage">{{ copy.confirm_delete }}</p>
       </div>

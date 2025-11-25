@@ -440,9 +440,14 @@ body {
   padding: 1.5rem;
 }
 
+.modal--confirm .modal__body {
+  padding-bottom: 1rem;
+}
+
 .modal__actions {
   display: flex;
   gap: 0.6rem;
+  padding: 0 1.5rem 1.5rem 1.5rem;
 }
 
 .form-status {
