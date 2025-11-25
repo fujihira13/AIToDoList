@@ -494,12 +494,14 @@
       item.className = "staff-distribution-item";
       item.innerHTML = `
         <div class="staff-distribution-item__header">
-          ${renderAvatar(staff)}
+          <div class="staff-distribution-item__title-row">
+            <h3 class="staff-distribution-item__name">${staff.name}</h3>
+            <div class="staff-distribution-item__total">${total}件</div>
+          </div>
           <div class="staff-distribution-item__info">
-            <p class="staff-distribution-item__name">${staff.name}</p>
+            ${renderAvatar(staff)}
             <p class="staff-distribution-item__dept">${staff.department || ""}</p>
           </div>
-          <div class="staff-distribution-item__total">${total}件</div>
         </div>
         <div class="staff-distribution-item__quadrants">
           ${quadrants

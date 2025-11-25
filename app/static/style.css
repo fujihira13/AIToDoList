@@ -547,6 +547,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  flex-wrap: nowrap;
 }
 
 .quadrant-summary__face {
@@ -567,8 +568,9 @@ body {
 .quadrant-summary__label {
   font-size: 0.9rem;
   font-weight: 700;
-  margin: 0 0 0.25rem;
+  margin: 0;
   color: #fff;
+  flex: 1;
 }
 
 .quadrant-summary__action {
@@ -579,14 +581,17 @@ body {
 }
 
 .quadrant-summary__count {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
   margin: 0;
+  flex-shrink: 0;
+  position: static;
 }
 
 .quadrant-summary__staff-list {
   padding-top: 0;
+  margin-top: 0;
 }
 
 .quadrant-summary__staff-item {
@@ -636,13 +641,22 @@ body {
 
 .staff-distribution-item__header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
+.staff-distribution-item__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .staff-distribution-item__info {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .staff-distribution-item__name {
@@ -653,7 +667,7 @@ body {
 }
 
 .staff-distribution-item__dept {
-  margin: 0.25rem 0 0;
+  margin: 0;
   font-size: 0.85rem;
   color: #64748b;
 }
