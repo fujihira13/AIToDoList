@@ -72,7 +72,6 @@
             <section class="members-section">
               <div class="staff-panel__header">
                 <h2>{{ copy.staff_title }}</h2>
-                <p>{{ copy.staff_sub }}</p>
               </div>
               <div id="staffList" class="staff-list"></div>
             </section>
@@ -84,6 +83,13 @@
               <div class="completed-panel__header">
                 <h2>完了したタスク</h2>
                 <p>ステータスが「完了」のタスクを表示します。</p>
+              </div>
+              <div class="completed-sort">
+                <label for="completedSortOrder">並び順:</label>
+                <select id="completedSortOrder" class="completed-sort__select">
+                  <option value="asc">日付の昇順</option>
+                  <option value="desc">日付の降順</option>
+                </select>
               </div>
               <div id="completedList" class="completed-list"></div>
             </section>
@@ -103,10 +109,9 @@
             >
               {{ copy.form_create }}
             </h2>
-            <p class="modal__description">各項目を入力してタスクを作成してください。*マークが付いている項目は必須です。</p>
           </div>
-          <button type="button" class="btn btn--ghost" id="cancelTaskBtn">
-            {{ copy.cancel }}
+          <button type="button" class="btn btn--close" id="cancelTaskBtn" aria-label="閉じる">
+            ×
           </button>
         </header>
         <input type="hidden" name="task_id" id="task_id" />
@@ -115,7 +120,6 @@
           <label class="form-field">
             <span>タイトル *</span>
             <input type="text" name="title" id="title" maxlength="80" required placeholder="タスクの名前を入力してください" />
-            <small class="helper-text">タスクの名前を入力してください。最大80文字。</small>
           </label>
 
           <label class="form-field">
@@ -126,7 +130,6 @@
               <option value="{{ person.id }}">{{ person.name }}</option>
               {% endfor %}
             </select>
-            <small class="helper-text">このタスクを担当する人を選択してください。</small>
             <small id="ownerDept" class="helper-text"></small>
           </label>
 
@@ -137,7 +140,6 @@
               <option value="{{ option.value }}">{{ option.label }}</option>
               {% endfor %}
             </select>
-            <small class="helper-text">タスクの進捗状況を選択してください。</small>
           </label>
 
           <label class="form-field">
@@ -147,36 +149,31 @@
               <option value="{{ option.value }}">{{ option.label }}</option>
               {% endfor %}
             </select>
-            <small class="helper-text">タスクの優先度を選択してください。高、中、低から選択します。</small>
           </label>
 
           <label class="form-field">
-            <span>象限 *</span>
+            <span>重要度 *</span>
             <select name="quadrant" id="quadrant">
               {% for quadrant in [1, 2, 3, 4] %}
-              <option value="{{ quadrant }}">第{{ quadrant }}象限　-　{{ quadrant_labels[quadrant] }}</option>
+              <option value="{{ quadrant }}">{{ quadrant_labels[quadrant] }}</option>
               {% endfor %}
             </select>
-            <small class="helper-text">アイゼンハワーマトリクスによる分類を選択してください。重要度と緊急度に従って選択します。</small>
           </label>
 
           <label class="form-field">
             <span>期限</span>
             <input type="date" name="due_date" id="due_date" />
-            <small class="helper-text">タスクの期限日を選択してください。選択しない場合は空でも構いません。</small>
           </label>
 
           <label class="form-field">
             <span>作成者</span>
             <input type="text" name="created_by" id="created_by" placeholder="タスクを作成した人の名前" />
-            <small class="helper-text">このタスクを作成した人の名前を入力してください。選択しない場合は空でも構いません。</small>
           </label>
         </div>
 
         <label class="form-field">
           <span>詳細</span>
           <textarea name="description" id="description" rows="4" maxlength="500" placeholder="タスクの詳細な内容を入力してください"></textarea>
-          <small class="helper-text">タスクの詳細な内容を入力してください。最大500文字。選択しない場合は空でも構いません。</small>
         </label>
 
         <footer class="modal__footer">
@@ -193,12 +190,13 @@
 
     <dialog id="staffDialog" class="modal">
       <form id="staffForm" method="dialog" enctype="multipart/form-data">
+        <input type="hidden" name="staff_id" id="staff_id" />
         <header class="modal__header">
           <div>
-            <h2>メンバーを追加</h2>
+            <h2 id="staffFormTitle">メンバーを追加</h2>
           </div>
-          <button type="button" class="btn btn--ghost" id="cancelStaffBtn">
-            {{ copy.cancel }}
+          <button type="button" class="btn btn--close" id="cancelStaffBtn" aria-label="閉じる">
+            ×
           </button>
         </header>
 
@@ -222,7 +220,10 @@
         <footer class="modal__footer">
           <span id="staffFormStatus" class="form-status" role="status"></span>
           <div class="modal__actions">
-            <button type="submit" class="btn btn--primary">追加</button>
+            <button type="button" class="btn btn--danger" id="deleteStaffBtn" style="display: none;">
+              削除
+            </button>
+            <button type="submit" class="btn btn--primary" id="submitStaffBtn">追加</button>
           </div>
         </footer>
       </form>

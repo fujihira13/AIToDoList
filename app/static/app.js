@@ -31,6 +31,7 @@
   const staffDialog = document.getElementById("staffDialog");
   const form = document.getElementById("taskForm");
   const staffForm = document.getElementById("staffForm");
+  const formStaffId = document.getElementById("staff_id");
   const formTitle = document.getElementById("taskFormTitle");
   const deleteBtn = document.getElementById("deleteTaskBtn");
   const cancelBtn = document.getElementById("cancelTaskBtn");
@@ -49,9 +50,15 @@
   const dangerStaffListEl = document.getElementById("dangerStaffList");
   const dangerListEl = document.getElementById("dangerList");
   const completedListEl = document.getElementById("completedList");
+  const completedSortOrderEl = document.getElementById("completedSortOrder");
+  const staffFormTitle = document.getElementById("staffFormTitle");
+  const submitStaffBtn = document.getElementById("submitStaffBtn");
+  const deleteStaffBtn = document.getElementById("deleteStaffBtn");
 
   let editingId = null;
   let deleteTargetId = null;
+  let editingStaffId = null;
+  let completedSortOrder = "asc";
 
   const quadrants = [1, 2, 3, 4];
 
@@ -197,6 +204,8 @@
     state.staff.forEach((person) => {
       const item = document.createElement("article");
       item.className = "staff-card";
+      item.style.cursor = "pointer";
+      item.addEventListener("click", () => openStaffForm(person.id));
       item.innerHTML = `
         ${renderAvatar(person)}
         <div>
@@ -716,9 +725,20 @@
       return;
     }
     
+    // 日付でソート
+    const sortedTasks = [...completedTasks].sort((a, b) => {
+      const dateA = a.due_date || "";
+      const dateB = b.due_date || "";
+      if (completedSortOrder === "asc") {
+        return dateA.localeCompare(dateB);
+      } else {
+        return dateB.localeCompare(dateA);
+      }
+    });
+    
     // 象限ごとにグループ化
     const tasksByQuadrant = { 1: [], 2: [], 3: [], 4: [] };
-    completedTasks.forEach((task) => {
+    sortedTasks.forEach((task) => {
       const q = task.quadrant || 1;
       if (tasksByQuadrant[q]) {
         tasksByQuadrant[q].push(task);
@@ -740,7 +760,7 @@
       const taskContainer = document.createElement("div");
       taskContainer.className = "completed-quadrant__tasks";
       
-      sortTasks(quadrantTasks).forEach((task) => {
+      quadrantTasks.forEach((task) => {
         taskContainer.appendChild(buildTaskCard(task));
       });
       
@@ -815,10 +835,30 @@
   confirmDeleteBtn?.addEventListener("click", handleDelete);
   confirmCancelBtn?.addEventListener("click", closeConfirm);
   
-  // メンバー追加フォーム
-  function openStaffForm() {
+  // メンバー追加/編集フォーム
+  function openStaffForm(staffId = null) {
     if (!staffForm) return;
+    editingStaffId = staffId;
     resetStaffFormStatus();
+    
+    if (staffId) {
+      const staff = state.staff.find((s) => s.id === staffId);
+      if (!staff) return;
+      staffFormTitle.textContent = "メンバーを編集";
+      submitStaffBtn.textContent = "更新";
+      deleteStaffBtn.style.display = "inline-flex";
+      if (formStaffId) formStaffId.value = staff.id;
+      form.staff_name.value = staff.name || "";
+      form.staff_department.value = staff.department || "";
+      form.staff_photo.value = "";
+    } else {
+      staffFormTitle.textContent = "メンバーを追加";
+      submitStaffBtn.textContent = "追加";
+      deleteStaffBtn.style.display = "none";
+      form.reset();
+      editingStaffId = null;
+    }
+    
     if (typeof staffDialog?.showModal === "function") {
       staffDialog.showModal();
     } else {
@@ -835,6 +875,7 @@
     if (staffForm) {
       staffForm.reset();
     }
+    editingStaffId = null;
   }
 
   function resetStaffFormStatus(message = "") {
@@ -848,15 +889,17 @@
     if (!staffForm) return;
     
     const formData = new FormData(staffForm);
+    const url = editingStaffId ? `/api/staff/${editingStaffId}` : "/api/staff";
+    const method = editingStaffId ? "PUT" : "POST";
     
     try {
-      const response = await fetch("/api/staff", {
-        method: "POST",
+      const response = await fetch(url, {
+        method,
         body: formData,
       });
       
       if (!response.ok) {
-        let message = "メンバーの追加に失敗しました";
+        let message = editingStaffId ? "メンバーの更新に失敗しました" : "メンバーの追加に失敗しました";
         try {
           const payload = await response.json();
           if (typeof payload.detail === "string") message = payload.detail;
@@ -867,7 +910,11 @@
       }
       
       const data = await response.json();
-      state.staff = [...state.staff, data];
+      if (editingStaffId) {
+        state.staff = state.staff.map((s) => (s.id === data.id ? data : s));
+      } else {
+        state.staff = [...state.staff, data];
+      }
       renderStaff();
       renderBoard();
       // プレビュー画面が表示されている場合は更新
@@ -884,13 +931,45 @@
       }
       closeStaffForm();
     } catch (error) {
-      resetStaffFormStatus(error.message || "メンバーの追加に失敗しました");
+      resetStaffFormStatus(error.message || (editingStaffId ? "メンバーの更新に失敗しました" : "メンバーの追加に失敗しました"));
     }
   }
 
-  addStaffBtn?.addEventListener("click", openStaffForm);
+  async function handleDeleteStaff() {
+    if (!editingStaffId) return;
+    try {
+      await request(`/api/staff/${editingStaffId}`, { method: "DELETE" });
+      state.staff = state.staff.filter((s) => s.id !== editingStaffId);
+      renderStaff();
+      renderBoard();
+      // プレビュー画面が表示されている場合は更新
+      if (document.getElementById("previewTab")?.classList.contains("tab-panel--active")) {
+        renderPreview();
+      }
+      // デンジャーリストが表示されている場合は更新
+      if (document.getElementById("dangerTab")?.classList.contains("tab-panel--active")) {
+        renderDangerList();
+      }
+      // 完了タブが表示されている場合は更新
+      if (document.getElementById("completedTab")?.classList.contains("tab-panel--active")) {
+        renderCompleted();
+      }
+      closeStaffForm();
+    } catch (error) {
+      resetStaffFormStatus(error.message || "メンバーの削除に失敗しました");
+    }
+  }
+
+  addStaffBtn?.addEventListener("click", () => openStaffForm(null));
   cancelStaffBtn?.addEventListener("click", closeStaffForm);
   staffForm?.addEventListener("submit", handleStaffSubmit);
+  deleteStaffBtn?.addEventListener("click", handleDeleteStaff);
+  
+  // 完了タブのソート機能
+  completedSortOrderEl?.addEventListener("change", (e) => {
+    completedSortOrder = e.target.value;
+    renderCompleted();
+  });
   
   // タブボタンのイベント
   tabBtns.forEach((btn) => {

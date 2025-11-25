@@ -202,13 +202,59 @@ async def api_create_staff(
     return created
 
 
+@app.put("/api/staff/{staff_id}", response_model=schemas.Staff)
+async def api_update_staff(
+    staff_id: int,
+    name: str = Form(...),
+    department: str = Form(None),
+    photo: UploadFile = File(None),
+) -> Dict:
+    """メンバーを更新します。アバター画像をアップロードできます。"""
+    try:
+        staff = repo.get_staff(staff_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="メンバーが見つかりません") from exc
+    
+    # 画像ファイルを保存
+    photo_filename = None
+    if photo and photo.filename:
+        # 古い画像ファイルを削除
+        for key in ["photo", "photo_q1", "photo_q2", "photo_q3", "photo_q4"]:
+            if key in staff and staff[key]:
+                img_path = AVATARS_DIR / staff[key]
+                if img_path.exists():
+                    img_path.unlink()
+        
+        # ファイル拡張子を取得
+        ext = Path(photo.filename).suffix or ".png"
+        # ユニークなファイル名を生成
+        filename = f"{uuid4()}{ext}"
+        file_path = AVATARS_DIR / filename
+        
+        # ファイルを保存
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(photo.file, buffer)
+        
+        photo_filename = filename
+    else:
+        # 画像がアップロードされていない場合は既存の画像を保持
+        photo_filename = staff.get("photo")
+    
+    # メンバーを更新
+    payload = schemas.StaffUpdate(
+        name=name,
+        department=department if department else None,
+        photo=photo_filename,
+    )
+    updated = repo.update_staff(staff_id, payload)
+    return updated
+
+
 @app.delete("/api/staff/{staff_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def api_delete_staff(staff_id: int) -> None:
     """メンバーを削除します。"""
     try:
-        staff = next((s for s in repo.list_staff() if s["id"] == staff_id), None)
-        if not staff:
-            raise HTTPException(status_code=404, detail="メンバーが見つかりません")
+        staff = repo.get_staff(staff_id)
         
         # 画像ファイルを削除
         for key in ["photo", "photo_q1", "photo_q2", "photo_q3", "photo_q4"]:

@@ -26,6 +26,12 @@ class StaffCreate(BaseModel):
     photo: Optional[str] = None
 
 
+class StaffUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=50)
+    department: Optional[str] = Field(None, max_length=50)
+    photo: Optional[str] = None
+
+
 class TaskBase(BaseModel):
     title: str = Field(..., max_length=80)
     description: Optional[str] = Field(None, max_length=500)

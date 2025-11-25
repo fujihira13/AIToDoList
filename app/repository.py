@@ -82,6 +82,20 @@ class DataRepository:
             self._persist_staff()
         return data.copy()
 
+    def get_staff(self, staff_id: int) -> StaffRecord:
+        for staff in self._staff:
+            if staff["id"] == staff_id:
+                return staff
+        raise KeyError(staff_id)
+
+    def update_staff(self, staff_id: int, payload: schemas.StaffUpdate) -> StaffRecord:
+        update_data = payload.model_dump(exclude_unset=True)
+        with self._lock:
+            staff = self.get_staff(staff_id)
+            staff.update(update_data)
+            self._persist_staff()
+            return staff.copy()
+
     def delete_staff(self, staff_id: int) -> None:
         with self._lock:
             index = next((i for i, staff in enumerate(self._staff) if staff["id"] == staff_id), -1)

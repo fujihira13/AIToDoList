@@ -311,6 +311,24 @@ body {
   color: #2563eb;
 }
 
+.btn--close {
+  background: transparent;
+  color: #64748b;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  padding: 0.25rem 0.75rem;
+  width: auto;
+  min-width: auto;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn--close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
 .btn--danger {
   background: #ef4444;
   color: #fff;
@@ -1193,6 +1211,39 @@ body {
   font-size: 1.3rem;
   color: #0f172a;
   font-weight: 600;
+}
+
+.completed-sort {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.completed-sort label {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.completed-sort__select {
+  border: 1px solid #cbd5f5;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.completed-sort__select:hover {
+  border-color: #2563eb;
+}
+
+.completed-sort__select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .completed-quadrant__tasks {
