@@ -23,10 +23,7 @@ class Staff(BaseModel):
 class StaffCreate(BaseModel):
     name: str = Field(..., max_length=50)
     department: Optional[str] = Field(None, max_length=50)
-    photo_q1: Optional[str] = None
-    photo_q2: Optional[str] = None
-    photo_q3: Optional[str] = None
-    photo_q4: Optional[str] = None
+    photo: Optional[str] = None
 
 
 class TaskBase(BaseModel):

@@ -174,33 +174,29 @@ async def api_delete_task(task_id: int) -> None:
 async def api_create_staff(
     name: str = Form(...),
     department: str = Form(None),
-    photo_q1: UploadFile = File(None),
-    photo_q2: UploadFile = File(None),
-    photo_q3: UploadFile = File(None),
-    photo_q4: UploadFile = File(None),
+    photo: UploadFile = File(None),
 ) -> Dict:
-    """メンバーを追加します。各象限用の画像をアップロードできます。"""
+    """メンバーを追加します。アバター画像をアップロードできます。"""
     # 画像ファイルを保存
-    photo_paths = {}
-    for quadrant, upload_file in [(1, photo_q1), (2, photo_q2), (3, photo_q3), (4, photo_q4)]:
-        if upload_file and upload_file.filename:
-            # ファイル拡張子を取得
-            ext = Path(upload_file.filename).suffix or ".png"
-            # ユニークなファイル名を生成
-            filename = f"{uuid4()}{ext}"
-            file_path = AVATARS_DIR / filename
-            
-            # ファイルを保存
-            with file_path.open("wb") as buffer:
-                shutil.copyfileobj(upload_file.file, buffer)
-            
-            photo_paths[f"photo_q{quadrant}"] = filename
+    photo_filename = None
+    if photo and photo.filename:
+        # ファイル拡張子を取得
+        ext = Path(photo.filename).suffix or ".png"
+        # ユニークなファイル名を生成
+        filename = f"{uuid4()}{ext}"
+        file_path = AVATARS_DIR / filename
+        
+        # ファイルを保存
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(photo.file, buffer)
+        
+        photo_filename = filename
     
     # メンバーを作成
     payload = schemas.StaffCreate(
         name=name,
         department=department if department else None,
-        **photo_paths,
+        photo=photo_filename,
     )
     created = repo.create_staff(payload)
     return created

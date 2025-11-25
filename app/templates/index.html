@@ -159,7 +159,6 @@
         <header class="modal__header">
           <div>
             <h2>メンバーを追加</h2>
-            <p class="modal__description">メンバー情報と各象限用のアバター画像を追加してください。*マークが付いている項目は必須です。</p>
           </div>
           <button type="button" class="btn btn--ghost" id="cancelStaffBtn">
             {{ copy.cancel }}
@@ -170,41 +169,18 @@
           <label class="form-field">
             <span>名前 *</span>
             <input type="text" name="name" id="staff_name" maxlength="50" required placeholder="メンバーの名前を入力してください" />
-            <small class="helper-text">メンバーの名前を入力してください。最大50文字。</small>
           </label>
 
           <label class="form-field">
             <span>所属部署</span>
             <input type="text" name="department" id="staff_department" maxlength="50" placeholder="所属部署を入力してください" />
-            <small class="helper-text">所属部署を入力してください。任意項目です。</small>
           </label>
         </div>
 
-        <div class="form-grid">
-          <label class="form-field">
-            <span>第1象限用アバター（重要かつ緊急）</span>
-            <input type="file" name="photo_q1" id="staff_photo_q1" accept="image/*" />
-            <small class="helper-text">焦っている表情のアバター画像をアップロードしてください。</small>
-          </label>
-
-          <label class="form-field">
-            <span>第2象限用アバター（重要だが緊急ではない）</span>
-            <input type="file" name="photo_q2" id="staff_photo_q2" accept="image/*" />
-            <small class="helper-text">計画的に進める表情のアバター画像をアップロードしてください。</small>
-          </label>
-
-          <label class="form-field">
-            <span>第3象限用アバター（緊急だが重要ではない）</span>
-            <input type="file" name="photo_q3" id="staff_photo_q3" accept="image/*" />
-            <small class="helper-text">困っている表情のアバター画像をアップロードしてください。</small>
-          </label>
-
-          <label class="form-field">
-            <span>第4象限用アバター（重要でも緊急でもない）</span>
-            <input type="file" name="photo_q4" id="staff_photo_q4" accept="image/*" />
-            <small class="helper-text">穏やかな表情のアバター画像をアップロードしてください。</small>
-          </label>
-        </div>
+        <label class="form-field">
+          <span>アバター画像</span>
+          <input type="file" name="photo" id="staff_photo" accept="image/*" />
+        </label>
 
         <footer class="modal__footer">
           <span id="staffFormStatus" class="form-status" role="status"></span>
