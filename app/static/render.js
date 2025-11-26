@@ -10,8 +10,16 @@ import {
   priorityClassMap,
   getCompletedSortOrder,
   getStaffSortOrder,
+  getStaffFilterText,
 } from "./state.js";
-import { sortTasks, formatDate, findStaff, renderAvatar, sortCompletedTasks, sortStaff } from "./utils.js";
+import {
+  sortTasks,
+  formatDate,
+  findStaff,
+  renderAvatar,
+  sortCompletedTasks,
+  sortStaff,
+} from "./utils.js";
 
 /**
  * ボード全体をレンダリングします
@@ -36,7 +44,9 @@ export function renderBoard() {
       const taskId = Number(event.dataTransfer?.getData("text/task-id"));
       if (taskId) {
         // イベントを発火して、events.jsで処理
-        const moveEvent = new CustomEvent("moveTask", { detail: { taskId, quadrant } });
+        const moveEvent = new CustomEvent("moveTask", {
+          detail: { taskId, quadrant },
+        });
         document.dispatchEvent(moveEvent);
       }
     });
@@ -94,7 +104,9 @@ export function buildTaskCard(task) {
   });
   card.addEventListener("click", () => {
     // イベントを発火して、events.jsで処理
-    const event = new CustomEvent("openTaskForm", { detail: { taskId: task.id } });
+    const event = new CustomEvent("openTaskForm", {
+      detail: { taskId: task.id },
+    });
     document.dispatchEvent(event);
   });
 
@@ -135,17 +147,43 @@ export function buildTaskCard(task) {
 export function renderStaff() {
   if (!elements.staffList) return;
   elements.staffList.innerHTML = "";
-  
+
+  // フィルターテキストを取得
+  const filterText = getStaffFilterText().toLowerCase().trim();
+
+  // フィルター適用：名前または部署にフィルターテキストが含まれるメンバーのみを抽出
+  let filteredStaff = state.staff;
+  if (filterText) {
+    filteredStaff = state.staff.filter((person) => {
+      const name = (person.name || "").toLowerCase();
+      const department = (person.department || "").toLowerCase();
+      return name.includes(filterText) || department.includes(filterText);
+    });
+  }
+
   // ソート順に従ってメンバーをソート
-  const sortedStaff = sortStaff(state.staff, getStaffSortOrder());
-  
+  const sortedStaff = sortStaff(filteredStaff, getStaffSortOrder());
+
+  // フィルター結果が0件の場合のメッセージ表示
+  if (sortedStaff.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "staff-list__empty";
+    empty.textContent = filterText
+      ? `「${filterText}」に一致するメンバーが見つかりませんでした`
+      : "メンバーが登録されていません";
+    elements.staffList.appendChild(empty);
+    return;
+  }
+
   sortedStaff.forEach((person) => {
     const item = document.createElement("article");
     item.className = "staff-card";
     item.style.cursor = "pointer";
     item.addEventListener("click", () => {
       // イベントを発火して、events.jsで処理
-      const event = new CustomEvent("openStaffForm", { detail: { staffId: person.id } });
+      const event = new CustomEvent("openStaffForm", {
+        detail: { staffId: person.id },
+      });
       document.dispatchEvent(event);
     });
     item.innerHTML = `
@@ -265,9 +303,7 @@ function renderStaffDistribution() {
         </div>
         <div class="staff-distribution-item__info">
           ${renderAvatar(staff)}
-          <p class="staff-distribution-item__dept">${
-            staff.department || ""
-          }</p>
+          <p class="staff-distribution-item__dept">${staff.department || ""}</p>
         </div>
       </div>
       <div class="staff-distribution-item__quadrants">
@@ -278,9 +314,7 @@ function renderStaffDistribution() {
             const qClass = `quadrant-bar__fill--q${q}`;
             return `
               <div class="quadrant-bar">
-                <div class="quadrant-bar__label">${
-                  state.labels[q] || ""
-                }</div>
+                <div class="quadrant-bar__label">${state.labels[q] || ""}</div>
                 <div class="quadrant-bar__container">
                   <div class="quadrant-bar__fill ${qClass}" style="height: ${height}%"></div>
                 </div>
@@ -376,12 +410,14 @@ function renderDangerStaffList() {
       if (existingWarning) {
         existingWarning.remove();
       }
-      
+
       // 3件以上のスタッフがいる場合は警告文を追加
       if (criticalStaff.length > 0) {
         const warningElement = document.createElement("span");
         warningElement.className = "danger-warning";
-        warningElement.textContent = `${criticalStaff.join("、")}さんが炎上しそうです`;
+        warningElement.textContent = `${criticalStaff.join(
+          "、"
+        )}さんが炎上しそうです`;
         titleElement.appendChild(warningElement);
       }
     }
@@ -439,9 +475,7 @@ function renderDangerStaffList() {
           ${tasks
             .map(
               (task) => `
-            <div class="danger-staff-card__task-item" data-task-id="${
-              task.id
-            }">
+            <div class="danger-staff-card__task-item" data-task-id="${task.id}">
               <span class="danger-staff-card__task-title">${task.title}</span>
               <span class="danger-staff-card__task-status badge ${
                 state.statusColors[task.status] || "badge--todo"
@@ -509,7 +543,9 @@ function buildDangerTaskCard(task) {
   card.dataset.taskId = String(task.id);
   card.addEventListener("click", () => {
     // イベントを発火して、events.jsで処理
-    const event = new CustomEvent("openTaskForm", { detail: { taskId: task.id } });
+    const event = new CustomEvent("openTaskForm", {
+      detail: { taskId: task.id },
+    });
     document.dispatchEvent(event);
   });
 
@@ -576,7 +612,10 @@ export function renderCompleted() {
   }
 
   // ソート処理
-  const sortedTasks = sortCompletedTasks(completedTasks, getCompletedSortOrder());
+  const sortedTasks = sortCompletedTasks(
+    completedTasks,
+    getCompletedSortOrder()
+  );
 
   // 象限ごとにグループ化
   const tasksByQuadrant = { 1: [], 2: [], 3: [], 4: [] };
@@ -612,4 +651,3 @@ export function renderCompleted() {
     elements.completedList.appendChild(section);
   });
 }
-

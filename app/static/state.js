@@ -30,6 +30,7 @@ let deleteTargetStaffId = null;
 let editingStaffId = null;
 let completedSortOrder = "date-asc";
 let staffSortOrder = "name-asc";
+let staffFilterText = "";
 
 // Getter関数
 export function getEditingId() {
@@ -56,6 +57,10 @@ export function getStaffSortOrder() {
   return staffSortOrder;
 }
 
+export function getStaffFilterText() {
+  return staffFilterText;
+}
+
 // 状態更新関数
 export function setEditingId(id) {
   editingId = id;
@@ -79,6 +84,10 @@ export function setCompletedSortOrder(order) {
 
 export function setStaffSortOrder(order) {
   staffSortOrder = order;
+}
+
+export function setStaffFilterText(text) {
+  staffFilterText = text;
 }
 
 export function clearEditingState() {
@@ -124,6 +133,7 @@ export const elements = {
   completedList: document.getElementById("completedList"),
   completedSortOrder: document.getElementById("completedSortOrder"),
   staffSortOrder: document.getElementById("staffSortOrder"),
+  staffFilter: document.getElementById("staffFilter"),
   staffFormTitle: document.getElementById("staffFormTitle"),
   submitStaffBtn: document.getElementById("submitStaffBtn"),
   deleteStaffBtn: document.getElementById("deleteStaffBtn"),
@@ -138,4 +148,3 @@ export const priorityClassMap = {
   中: "medium",
   低: "low",
 };
-

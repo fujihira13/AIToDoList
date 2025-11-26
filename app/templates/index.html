@@ -9,7 +9,9 @@
   <body>
     <header class="page-header">
       <div>
-        {% if copy.page_title %}<h1>{{ copy.page_title }}</h1>{% endif %}
+        {% if copy.page_title %}
+        <h1>{{ copy.page_title }}</h1>
+        {% endif %}
       </div>
       <div class="header-actions">
         <button type="button" class="btn btn--primary" id="addTaskBtn">
@@ -35,9 +37,7 @@
         <button type="button" class="tab-btn" data-tab="members">
           メンバー
         </button>
-        <button type="button" class="tab-btn" data-tab="completed">
-          完了
-        </button>
+        <button type="button" class="tab-btn" data-tab="completed">完了</button>
       </div>
       <div class="tabs__content">
         <div class="tab-panel tab-panel--active" id="boardTab">
@@ -72,6 +72,15 @@
             <section class="members-section">
               <div class="staff-panel__header">
                 <h2>{{ copy.staff_title }}</h2>
+              </div>
+              <div class="staff-filter">
+                <label for="staffFilter">名前で検索:</label>
+                <input
+                  type="text"
+                  id="staffFilter"
+                  class="staff-filter__input"
+                  placeholder="メンバー名を入力してください"
+                />
               </div>
               <div class="staff-sort">
                 <label for="staffSortOrder">並び順:</label>
@@ -120,7 +129,12 @@
               {{ copy.form_create }}
             </h2>
           </div>
-          <button type="button" class="btn btn--close" id="cancelTaskBtn" aria-label="閉じる">
+          <button
+            type="button"
+            class="btn btn--close"
+            id="cancelTaskBtn"
+            aria-label="閉じる"
+          >
             ×
           </button>
         </header>
@@ -129,7 +143,14 @@
         <div class="form-grid">
           <label class="form-field">
             <span>タイトル *</span>
-            <input type="text" name="title" id="title" maxlength="80" required placeholder="タスクの名前を入力してください" />
+            <input
+              type="text"
+              name="title"
+              id="title"
+              maxlength="80"
+              required
+              placeholder="タスクの名前を入力してください"
+            />
           </label>
 
           <label class="form-field">
@@ -165,7 +186,9 @@
             <span>重要度 *</span>
             <select name="quadrant" id="quadrant">
               {% for quadrant in [1, 2, 3, 4] %}
-              <option value="{{ quadrant }}">{{ quadrant_labels[quadrant] }}</option>
+              <option value="{{ quadrant }}">
+                {{ quadrant_labels[quadrant] }}
+              </option>
               {% endfor %}
             </select>
           </label>
@@ -177,13 +200,24 @@
 
           <label class="form-field">
             <span>作成者</span>
-            <input type="text" name="created_by" id="created_by" placeholder="タスクを作成した人の名前" />
+            <input
+              type="text"
+              name="created_by"
+              id="created_by"
+              placeholder="タスクを作成した人の名前"
+            />
           </label>
         </div>
 
         <label class="form-field">
           <span>詳細</span>
-          <textarea name="description" id="description" rows="4" maxlength="500" placeholder="タスクの詳細な内容を入力してください"></textarea>
+          <textarea
+            name="description"
+            id="description"
+            rows="4"
+            maxlength="500"
+            placeholder="タスクの詳細な内容を入力してください"
+          ></textarea>
         </label>
 
         <footer class="modal__footer">
@@ -192,7 +226,9 @@
             <button type="button" class="btn btn--danger" id="deleteTaskBtn">
               {{ copy.delete_task }}
             </button>
-            <button type="submit" class="btn btn--primary">{{ copy.save_task }}</button>
+            <button type="submit" class="btn btn--primary">
+              {{ copy.save_task }}
+            </button>
           </div>
         </footer>
       </form>
@@ -205,7 +241,12 @@
           <div>
             <h2 id="staffFormTitle">メンバーを追加</h2>
           </div>
-          <button type="button" class="btn btn--close" id="cancelStaffBtn" aria-label="閉じる">
+          <button
+            type="button"
+            class="btn btn--close"
+            id="cancelStaffBtn"
+            aria-label="閉じる"
+          >
             ×
           </button>
         </header>
@@ -213,12 +254,25 @@
         <div class="form-grid">
           <label class="form-field">
             <span>名前 *</span>
-            <input type="text" name="staff_name" id="staff_name" maxlength="50" required placeholder="メンバーの名前を入力してください" />
+            <input
+              type="text"
+              name="staff_name"
+              id="staff_name"
+              maxlength="50"
+              required
+              placeholder="メンバーの名前を入力してください"
+            />
           </label>
 
           <label class="form-field">
             <span>所属部署</span>
-            <input type="text" name="department" id="staff_department" maxlength="50" placeholder="所属部署を入力してください" />
+            <input
+              type="text"
+              name="department"
+              id="staff_department"
+              maxlength="50"
+              placeholder="所属部署を入力してください"
+            />
           </label>
         </div>
 
@@ -230,10 +284,17 @@
         <footer class="modal__footer">
           <span id="staffFormStatus" class="form-status" role="status"></span>
           <div class="modal__actions">
-            <button type="button" class="btn btn--danger" id="deleteStaffBtn" style="display: none;">
+            <button
+              type="button"
+              class="btn btn--danger"
+              id="deleteStaffBtn"
+              style="display: none"
+            >
               削除
             </button>
-            <button type="submit" class="btn btn--primary" id="submitStaffBtn">追加</button>
+            <button type="submit" class="btn btn--primary" id="submitStaffBtn">
+              追加
+            </button>
           </div>
         </footer>
       </form>
@@ -242,7 +303,12 @@
     <dialog id="confirmDialog" class="modal modal--confirm">
       <header class="modal__header">
         <div></div>
-        <button type="button" class="btn btn--close" id="confirmCloseBtn" aria-label="閉じる">
+        <button
+          type="button"
+          class="btn btn--close"
+          id="confirmCloseBtn"
+          aria-label="閉じる"
+        >
           ×
         </button>
       </header>
@@ -259,10 +325,11 @@
       </div>
     </dialog>
 
-    <footer class="page-footer" style="display: none;">
-    </footer>
+    <footer class="page-footer" style="display: none"></footer>
 
-    <script id="initial-data" type="application/json">{{ initial_payload | tojson }}</script>
+    <script id="initial-data" type="application/json">
+      {{ initial_payload | tojson }}
+    </script>
     <script type="module" src="/static/app.js"></script>
   </body>
 </html>

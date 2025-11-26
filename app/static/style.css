@@ -292,6 +292,16 @@ body {
   font-size: 0.85rem;
 }
 
+.staff-list__empty {
+  text-align: center;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
 .btn {
   border: none;
   border-radius: 999px;
@@ -809,6 +819,40 @@ body {
   padding: 1.5rem;
 }
 
+.staff-filter {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.staff-filter label {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.staff-filter__input {
+  flex: 1;
+  max-width: 400px;
+  border: 1px solid #cbd5f5;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  background: #fff;
+  color: #0f172a;
+}
+
+.staff-filter__input:hover {
+  border-color: #2563eb;
+}
+
+.staff-filter__input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 .staff-sort {
   margin-bottom: 1rem;
   display: flex;
@@ -936,7 +980,8 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -1178,7 +1223,8 @@ body {
 }
 
 @keyframes danger-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

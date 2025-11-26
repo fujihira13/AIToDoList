@@ -9,6 +9,7 @@ import {
   getEditingStaffId,
   setCompletedSortOrder,
   setStaffSortOrder,
+  setStaffFilterText,
 } from "./state.js";
 import {
   openForm,
@@ -88,6 +89,12 @@ function init() {
   // メンバー一覧のソート機能
   elements.staffSortOrder?.addEventListener("change", (e) => {
     setStaffSortOrder(e.target.value);
+    import("./render.js").then(({ renderStaff }) => renderStaff());
+  });
+
+  // メンバー一覧のフィルター機能
+  elements.staffFilter?.addEventListener("input", (e) => {
+    setStaffFilterText(e.target.value);
     import("./render.js").then(({ renderStaff }) => renderStaff());
   });
 
