@@ -8,6 +8,7 @@ import {
   getEditingId,
   getEditingStaffId,
   setCompletedSortOrder,
+  setStaffSortOrder,
 } from "./state.js";
 import {
   openForm,
@@ -82,6 +83,12 @@ function init() {
   elements.completedSortOrder?.addEventListener("change", (e) => {
     setCompletedSortOrder(e.target.value);
     import("./render.js").then(({ renderCompleted }) => renderCompleted());
+  });
+
+  // メンバー一覧のソート機能
+  elements.staffSortOrder?.addEventListener("change", (e) => {
+    setStaffSortOrder(e.target.value);
+    import("./render.js").then(({ renderStaff }) => renderStaff());
   });
 
   // タブボタンのイベント

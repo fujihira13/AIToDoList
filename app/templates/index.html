@@ -73,6 +73,15 @@
               <div class="staff-panel__header">
                 <h2>{{ copy.staff_title }}</h2>
               </div>
+              <div class="staff-sort">
+                <label for="staffSortOrder">並び順:</label>
+                <select id="staffSortOrder" class="staff-sort__select">
+                  <option value="name-asc">名前（昇順）</option>
+                  <option value="name-desc">名前（降順）</option>
+                  <option value="department-asc">職種（昇順）</option>
+                  <option value="department-desc">職種（降順）</option>
+                </select>
+              </div>
               <div id="staffList" class="staff-list"></div>
             </section>
           </div>
@@ -86,10 +95,10 @@
               <div class="completed-sort">
                 <label for="completedSortOrder">並び順:</label>
                 <select id="completedSortOrder" class="completed-sort__select">
-                  <option value="date-asc">日付の昇順</option>
-                  <option value="date-desc">日付の降順</option>
-                  <option value="priority-asc">優先度の昇順</option>
-                  <option value="priority-desc">優先度の降順</option>
+                  <option value="date-asc">日付（昇順）</option>
+                  <option value="date-desc">日付（降順）</option>
+                  <option value="priority-asc">優先度（昇順）</option>
+                  <option value="priority-desc">優先度（降順）</option>
                 </select>
               </div>
               <div id="completedList" class="completed-list"></div>

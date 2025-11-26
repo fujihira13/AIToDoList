@@ -9,8 +9,9 @@ import {
   quadrants,
   priorityClassMap,
   getCompletedSortOrder,
+  getStaffSortOrder,
 } from "./state.js";
-import { sortTasks, formatDate, findStaff, renderAvatar, sortCompletedTasks } from "./utils.js";
+import { sortTasks, formatDate, findStaff, renderAvatar, sortCompletedTasks, sortStaff } from "./utils.js";
 
 /**
  * ボード全体をレンダリングします
@@ -134,7 +135,11 @@ export function buildTaskCard(task) {
 export function renderStaff() {
   if (!elements.staffList) return;
   elements.staffList.innerHTML = "";
-  state.staff.forEach((person) => {
+  
+  // ソート順に従ってメンバーをソート
+  const sortedStaff = sortStaff(state.staff, getStaffSortOrder());
+  
+  sortedStaff.forEach((person) => {
     const item = document.createElement("article");
     item.className = "staff-card";
     item.style.cursor = "pointer";

@@ -29,6 +29,7 @@ let deleteTargetId = null;
 let deleteTargetStaffId = null;
 let editingStaffId = null;
 let completedSortOrder = "date-asc";
+let staffSortOrder = "name-asc";
 
 // Getter関数
 export function getEditingId() {
@@ -51,6 +52,10 @@ export function getCompletedSortOrder() {
   return completedSortOrder;
 }
 
+export function getStaffSortOrder() {
+  return staffSortOrder;
+}
+
 // 状態更新関数
 export function setEditingId(id) {
   editingId = id;
@@ -70,6 +75,10 @@ export function setEditingStaffId(id) {
 
 export function setCompletedSortOrder(order) {
   completedSortOrder = order;
+}
+
+export function setStaffSortOrder(order) {
+  staffSortOrder = order;
 }
 
 export function clearEditingState() {
@@ -114,6 +123,7 @@ export const elements = {
   dangerList: document.getElementById("dangerList"),
   completedList: document.getElementById("completedList"),
   completedSortOrder: document.getElementById("completedSortOrder"),
+  staffSortOrder: document.getElementById("staffSortOrder"),
   staffFormTitle: document.getElementById("staffFormTitle"),
   submitStaffBtn: document.getElementById("submitStaffBtn"),
   deleteStaffBtn: document.getElementById("deleteStaffBtn"),

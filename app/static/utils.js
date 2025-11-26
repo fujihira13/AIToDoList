@@ -106,3 +106,48 @@ export function sortCompletedTasks(completedTasks, sortOrder) {
   });
 }
 
+/**
+ * メンバーリストをソートします（メンバー一覧用）
+ * @param {Array} staffList - メンバーの配列
+ * @param {string} sortOrder - ソート順序（"name-asc", "name-desc", "department-asc", "department-desc"）
+ * @returns {Array} ソートされたメンバーの配列
+ */
+export function sortStaff(staffList, sortOrder) {
+  // 日本語のソート用にIntl.Collatorを使用
+  const collator = new Intl.Collator("ja", {
+    numeric: true,
+    sensitivity: "base",
+  });
+  
+  return [...staffList].sort((a, b) => {
+    if (sortOrder.startsWith("name-")) {
+      // 名前でソート
+      const nameA = a.name || "";
+      const nameB = b.name || "";
+      if (sortOrder === "name-asc") {
+        return collator.compare(nameA, nameB);
+      } else {
+        return collator.compare(nameB, nameA);
+      }
+    } else if (sortOrder.startsWith("department-")) {
+      // 職種（所属部署）でソート
+      const deptA = a.department || "";
+      const deptB = b.department || "";
+      if (sortOrder === "department-asc") {
+        // 職種が同じ場合は名前でソート
+        if (deptA === deptB) {
+          return collator.compare(a.name || "", b.name || "");
+        }
+        return collator.compare(deptA, deptB);
+      } else {
+        // 職種が同じ場合は名前でソート
+        if (deptA === deptB) {
+          return collator.compare(b.name || "", a.name || "");
+        }
+        return collator.compare(deptB, deptA);
+      }
+    }
+    return 0;
+  });
+}
+
