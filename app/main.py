@@ -14,6 +14,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, sta
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from . import repository, schemas
 
@@ -23,6 +24,19 @@ AVATARS_DIR = BASE_DIR / "static" / "avatars"
 
 app = FastAPI(title="Eisenhower Board", version="0.2.0")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+# 開発環境で静的ファイルのキャッシュを無効化するミドルウェア
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+app.add_middleware(NoCacheMiddleware)
+
 app.mount(
     "/static",
     StaticFiles(directory=str(BASE_DIR / "static")),

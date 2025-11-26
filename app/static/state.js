@@ -29,7 +29,7 @@ let deleteTargetId = null;
 let deleteTargetStaffId = null;
 let editingStaffId = null;
 let completedSortOrder = "date-asc";
-let staffSortOrder = "name-asc";
+let staffSortOrder = "department-asc";
 let staffFilterText = "";
 
 // Getter関数
@@ -53,12 +53,12 @@ export function getCompletedSortOrder() {
   return completedSortOrder;
 }
 
-export function getStaffSortOrder() {
-  return staffSortOrder;
-}
-
 export function getStaffFilterText() {
   return staffFilterText;
+}
+
+export function getStaffSortOrder() {
+  return staffSortOrder;
 }
 
 // 状態更新関数
@@ -82,12 +82,12 @@ export function setCompletedSortOrder(order) {
   completedSortOrder = order;
 }
 
-export function setStaffSortOrder(order) {
-  staffSortOrder = order;
-}
-
 export function setStaffFilterText(text) {
   staffFilterText = text;
+}
+
+export function setStaffSortOrder(order) {
+  staffSortOrder = order;
 }
 
 export function clearEditingState() {
@@ -148,3 +148,4 @@ export const priorityClassMap = {
   中: "medium",
   低: "low",
 };
+

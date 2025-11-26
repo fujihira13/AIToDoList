@@ -9,8 +9,9 @@ import {
   quadrants,
   priorityClassMap,
   getCompletedSortOrder,
-  getStaffSortOrder,
   getStaffFilterText,
+  setStaffFilterText,
+  getStaffSortOrder,
 } from "./state.js";
 import {
   sortTasks,
@@ -148,23 +149,37 @@ export function renderStaff() {
   if (!elements.staffList) return;
   elements.staffList.innerHTML = "";
 
-  // フィルターテキストを取得
-  const filterText = getStaffFilterText().toLowerCase().trim();
+  // state.staffが配列でない場合は空配列を使用
+  const staffArray = Array.isArray(state.staff) ? state.staff : [];
 
-  // フィルター適用：名前または部署にフィルターテキストが含まれるメンバーのみを抽出
-  let filteredStaff = state.staff;
+  // フィルター入力欄の値から状態を更新
+  const staffFilterInput = document.getElementById("staffFilter");
+  let filterText = "";
+  if (staffFilterInput) {
+    // 入力欄の値を状態に反映
+    filterText = staffFilterInput.value.trim();
+    setStaffFilterText(filterText);
+    // 小文字に変換して検索用に使用
+    filterText = filterText.toLowerCase();
+  } else {
+    // 入力欄が存在しない場合は状態から取得
+    filterText = getStaffFilterText().toLowerCase().trim();
+  }
+
+  // フィルター適用：名前にフィルターテキストが含まれるメンバーのみを抽出
+  let filteredStaff = staffArray;
   if (filterText) {
-    filteredStaff = state.staff.filter((person) => {
+    filteredStaff = staffArray.filter((person) => {
       const name = (person.name || "").toLowerCase();
-      const department = (person.department || "").toLowerCase();
-      return name.includes(filterText) || department.includes(filterText);
+      return name.includes(filterText);
     });
   }
 
   // ソート順に従ってメンバーをソート
-  const sortedStaff = sortStaff(filteredStaff, getStaffSortOrder());
+  const sortOrder = getStaffSortOrder() || "name-asc";
+  const sortedStaff = sortStaff(filteredStaff, sortOrder);
 
-  // フィルター結果が0件の場合のメッセージ表示
+  // メンバーが0件の場合のメッセージ表示
   if (sortedStaff.length === 0) {
     const empty = document.createElement("p");
     empty.className = "staff-list__empty";

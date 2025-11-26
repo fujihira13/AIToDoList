@@ -93,10 +93,13 @@ function init() {
   });
 
   // メンバー一覧のフィルター機能
-  elements.staffFilter?.addEventListener("input", (e) => {
-    setStaffFilterText(e.target.value);
-    import("./render.js").then(({ renderStaff }) => renderStaff());
-  });
+  const staffFilterInput = document.getElementById("staffFilter");
+  if (staffFilterInput) {
+    staffFilterInput.addEventListener("input", (e) => {
+      setStaffFilterText(e.target.value);
+      import("./render.js").then(({ renderStaff }) => renderStaff());
+    });
+  }
 
   // タブボタンのイベント
   elements.tabBtns.forEach((btn) => {
