@@ -1,47 +1,32 @@
 [
   {
-    "id": 1,
-    "name": "佐藤 未来",
-    "department": "企画",
-    "photo": "avatar-1.svg"
+    "name": "田中一郎",
+    "department": null,
+    "photo": null,
+    "id": 1
   },
   {
-    "id": 2,
-    "name": "山田 光",
+    "name": "山本次郎",
+    "department": null,
+    "photo": "f56cbf73-8b80-4d98-b205-b818fa02f521.png",
+    "id": 2
+  },
+  {
+    "name": "斎藤三郎",
     "department": "デザイン",
-    "photo": "avatar-2.svg"
+    "photo": null,
+    "id": 3
   },
   {
-    "id": 3,
-    "name": "田中 智也",
-    "department": "総務",
-    "photo": "avatar-3.svg"
+    "name": "あああ",
+    "department": null,
+    "photo": null,
+    "id": 4
   },
   {
-    "id": 4,
-    "name": "鈴木 彩",
-    "department": "広報",
-    "photo": "avatar-4.svg"
-  },
-  {
-    "id": 5,
-    "name": "Alex Lee",
-    "department": "情シス",
-    "photo": "avatar-5.svg"
-  },
-  {
-    "name": "山本",
-    "department": "情報",
-    "photo_q1": "d066d782-6d64-4e23-b6fc-5bb54608ddc0.png",
-    "photo_q2": "e79904bb-7bde-4312-92c6-616dfdcadb63.png",
-    "photo_q3": "f808e780-e9ff-4108-9235-97be4dc1d8f8.png",
-    "photo_q4": "f9166921-29a8-443c-96d8-28e45b608eeb.png",
-    "id": 6
-  },
-  {
-    "name": "斎藤",
+    "name": "藤本",
     "department": "情報",
     "photo": null,
-    "id": 7
+    "id": 5
   }
 ]

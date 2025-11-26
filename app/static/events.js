@@ -44,6 +44,10 @@ export function openForm(taskId = null) {
   setEditingId(taskId);
   resetFormStatus();
   if (!elements.taskForm) return;
+  
+  // メンバー選択肢を最新の状態に更新
+  updateOwnerOptions();
+  
   if (taskId) {
     const task = state.tasks.find((item) => item.id === taskId);
     if (!task) return;
@@ -146,6 +150,33 @@ export async function handleSubmit(event) {
     closeForm();
   } catch (error) {
     resetFormStatus(error.message || "保存に失敗しました");
+  }
+}
+
+/**
+ * 担当者選択肢を最新のメンバーリストに更新します
+ */
+function updateOwnerOptions() {
+  if (!elements.taskForm?.owner_id) return;
+  const ownerSelect = elements.taskForm.owner_id;
+  const currentValue = ownerSelect.value; // 現在選択されている値を保存
+  
+  // 最初の「-- 選択してください --」オプション以外を削除
+  while (ownerSelect.options.length > 1) {
+    ownerSelect.remove(1);
+  }
+  
+  // state.staffの内容に基づいて新しいオプションを追加
+  state.staff.forEach((person) => {
+    const option = document.createElement("option");
+    option.value = person.id;
+    option.textContent = person.name;
+    ownerSelect.appendChild(option);
+  });
+  
+  // 元の選択値を復元（存在する場合）
+  if (currentValue && Array.from(ownerSelect.options).some(opt => opt.value === currentValue)) {
+    ownerSelect.value = currentValue;
   }
 }
 
@@ -323,7 +354,15 @@ export async function handleStaffSubmit(event) {
   event.preventDefault();
   if (!elements.staffForm) return;
 
+  // FormDataを作成し、フィールド名をAPIが期待する形式に変換
   const formData = new FormData(elements.staffForm);
+  // staff_name を name に変換（バックエンドAPIは name を期待しているため）
+  const staffName = formData.get("staff_name");
+  if (staffName) {
+    formData.set("name", staffName);
+    formData.delete("staff_name");
+  }
+  
   const currentEditingStaffId = getEditingStaffId();
 
   try {
