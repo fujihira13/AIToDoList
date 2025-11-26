@@ -379,6 +379,14 @@ body {
   margin-bottom: 1rem;
 }
 
+/* 確認ダイアログのヘッダー余白を調整 */
+.modal--confirm .modal__header {
+  margin-bottom: 0.25rem;
+  padding-top: 0.75rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
 .modal__header > div {
   flex: 1;
 }
@@ -441,13 +449,34 @@ body {
 }
 
 .modal--confirm .modal__body {
-  padding-bottom: 1rem;
+  padding-top: 0.25rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-bottom: 0.75rem;
+}
+
+/* 確認ダイアログのメッセージの余白を調整 */
+.modal--confirm .modal__body p {
+  margin: 0;
+  line-height: 1.6;
 }
 
 .modal__actions {
   display: flex;
   gap: 0.6rem;
   padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+/* 確認ダイアログのアクションボタンエリアの余白を調整 */
+.modal--confirm .modal__actions {
+  padding-top: 0.5rem;
+  padding-bottom: 1.25rem;
+  justify-content: space-between;
+}
+
+/* 確認ダイアログのキャンセルボタンを右に配置 */
+.modal--confirm .modal__actions #confirmCancelBtn {
+  margin-left: auto;
 }
 
 .form-status {
