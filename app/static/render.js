@@ -348,9 +348,22 @@ function renderStaffDistribution() {
  * デンジャーリストをレンダリングします
  */
 export function renderDangerList() {
+  // レンダリング中はコンテナを非表示にしてレイアウトのちらつきを防ぐ
+  const dangerContainer = document.querySelector(".danger-container");
+  if (dangerContainer) {
+    dangerContainer.style.visibility = "hidden";
+  }
+
   renderDangerGauge();
   renderDangerStaffList();
   renderDangerTaskList();
+
+  // レンダリング完了後に表示を復元（次のフレームで実行）
+  requestAnimationFrame(() => {
+    if (dangerContainer) {
+      dangerContainer.style.visibility = "visible";
+    }
+  });
 }
 
 /**
@@ -386,7 +399,8 @@ function renderDangerGauge() {
 function renderDangerStaffList() {
   if (!elements.dangerStaffList) return;
 
-  elements.dangerStaffList.innerHTML = "";
+  // DocumentFragmentを使用して一度に追加することでレイアウトのちらつきを防ぐ
+  const fragment = document.createDocumentFragment();
 
   // 各スタッフの第1象限タスク数を集計（完了タスクを除外）
   const staffDangerMap = new Map();
@@ -415,24 +429,30 @@ function renderDangerStaffList() {
     .filter((entry) => entry.count >= 3)
     .map((entry) => entry.staff.name);
 
-  // タイトル部分に警告文を追加
+  // タイトル部分に警告文を追加（ちらつきを防ぐため、変更がある場合のみ更新）
   const dangerSection = elements.dangerStaffList.closest(".danger-section");
   if (dangerSection) {
     const titleElement = dangerSection.querySelector(".danger-section__title");
     if (titleElement) {
-      // 既存の警告文を削除
       const existingWarning = titleElement.querySelector(".danger-warning");
-      if (existingWarning) {
-        existingWarning.remove();
-      }
+      const currentWarningText = criticalStaff.length > 0
+        ? `${criticalStaff.join("、")}さんが炎上しそうです`
+        : "";
 
-      // 3件以上のスタッフがいる場合は警告文を追加
-      if (criticalStaff.length > 0) {
+      // 既存の警告文のテキストと比較して、変更がある場合のみ更新
+      if (existingWarning) {
+        if (existingWarning.textContent !== currentWarningText) {
+          if (currentWarningText) {
+            existingWarning.textContent = currentWarningText;
+          } else {
+            existingWarning.remove();
+          }
+        }
+      } else if (currentWarningText) {
+        // 警告文が存在せず、追加が必要な場合のみ追加
         const warningElement = document.createElement("span");
         warningElement.className = "danger-warning";
-        warningElement.textContent = `${criticalStaff.join(
-          "、"
-        )}さんが炎上しそうです`;
+        warningElement.textContent = currentWarningText;
         titleElement.appendChild(warningElement);
       }
     }
@@ -518,8 +538,12 @@ function renderDangerStaffList() {
       });
     });
 
-    elements.dangerStaffList.appendChild(card);
+    fragment.appendChild(card);
   });
+
+  // 一度にすべての要素を追加してレイアウトのちらつきを防ぐ
+  elements.dangerStaffList.innerHTML = "";
+  elements.dangerStaffList.appendChild(fragment);
 }
 
 /**
@@ -531,20 +555,25 @@ function renderDangerTaskList() {
   const dangerTasks = state.tasks.filter(
     (task) => task.quadrant === 1 && task.status !== "完了"
   );
-  elements.dangerList.innerHTML = "";
+  
+  // DocumentFragmentを使用して一度に追加することでレイアウトのちらつきを防ぐ
+  const fragment = document.createDocumentFragment();
 
   if (dangerTasks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "danger-list__empty";
     empty.textContent = "重要かつ緊急のタスクはありません";
-    elements.dangerList.appendChild(empty);
-    return;
+    fragment.appendChild(empty);
+  } else {
+    sortTasks(dangerTasks).forEach((task) => {
+      const card = buildDangerTaskCard(task);
+      fragment.appendChild(card);
+    });
   }
 
-  sortTasks(dangerTasks).forEach((task) => {
-    const card = buildDangerTaskCard(task);
-    elements.dangerList.appendChild(card);
-  });
+  // 一度にすべての要素を追加してレイアウトのちらつきを防ぐ
+  elements.dangerList.innerHTML = "";
+  elements.dangerList.appendChild(fragment);
 }
 
 /**

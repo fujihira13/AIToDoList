@@ -891,6 +891,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  /* レイアウトの安定化のため、最小高さを設定 */
+  min-height: 0;
+  /* スクロールバーのちらつきを防ぐ */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .danger-gauge-container {
