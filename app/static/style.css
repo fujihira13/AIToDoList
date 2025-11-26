@@ -959,6 +959,21 @@ body {
   color: #0f172a;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.danger-warning {
+  font-size: 1rem;
+  color: #dc2626;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  background-color: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: 8px;
+  margin-left: auto;
 }
 
 .danger-list {

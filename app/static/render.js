@@ -361,6 +361,32 @@ function renderDangerStaffList() {
     }
   });
 
+  // 3件以上のスタッフを集計（警告文表示用）
+  const criticalStaff = Array.from(staffDangerMap.values())
+    .filter((entry) => entry.count >= 3)
+    .map((entry) => entry.staff.name);
+
+  // タイトル部分に警告文を追加
+  const dangerSection = elements.dangerStaffList.closest(".danger-section");
+  if (dangerSection) {
+    const titleElement = dangerSection.querySelector(".danger-section__title");
+    if (titleElement) {
+      // 既存の警告文を削除
+      const existingWarning = titleElement.querySelector(".danger-warning");
+      if (existingWarning) {
+        existingWarning.remove();
+      }
+      
+      // 3件以上のスタッフがいる場合は警告文を追加
+      if (criticalStaff.length > 0) {
+        const warningElement = document.createElement("span");
+        warningElement.className = "danger-warning";
+        warningElement.textContent = `${criticalStaff.join("、")}さんが炎上しそうです`;
+        titleElement.appendChild(warningElement);
+      }
+    }
+  }
+
   // スタッフリストを配列に変換（第1象限タスク数が多い順、次に全スタッフ）
   const staffWithDanger = Array.from(staffDangerMap.values()).sort(
     (a, b) => b.count - a.count

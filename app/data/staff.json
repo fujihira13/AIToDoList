@@ -1,32 +1,20 @@
 [
   {
     "name": "田中一郎",
-    "department": null,
+    "department": "情報",
     "photo": null,
-    "id": 1
+    "id": 6
   },
   {
     "name": "山本次郎",
-    "department": null,
-    "photo": "f56cbf73-8b80-4d98-b205-b818fa02f521.png",
-    "id": 2
-  },
-  {
-    "name": "斎藤三郎",
     "department": "デザイン",
     "photo": null,
-    "id": 3
-  },
-  {
-    "name": "あああ",
-    "department": null,
-    "photo": null,
-    "id": 4
+    "id": 7
   },
   {
     "name": "藤本",
     "department": "情報",
     "photo": null,
-    "id": 5
+    "id": 8
   }
 ]

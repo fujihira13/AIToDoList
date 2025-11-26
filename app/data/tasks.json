@@ -2,7 +2,7 @@
   {
     "title": "システム障害",
     "description": "システム障害がおきた",
-    "owner_id": 1,
+    "owner_id": 7,
     "created_by": "田中",
     "due_date": "2025-11-27",
     "status": "進行中",
@@ -26,7 +26,7 @@
   {
     "title": "ビルドエラー",
     "description": "ビルドできない",
-    "owner_id": 3,
+    "owner_id": 6,
     "created_by": "田中",
     "due_date": "2025-11-26",
     "status": "進行中",
@@ -38,7 +38,7 @@
   {
     "title": "コードエラー",
     "description": null,
-    "owner_id": 2,
+    "owner_id": 6,
     "created_by": null,
     "due_date": "2025-11-26",
     "status": "未着手",
@@ -50,7 +50,7 @@
   {
     "title": "ビルドエラー",
     "description": null,
-    "owner_id": 5,
+    "owner_id": 6,
     "created_by": null,
     "due_date": null,
     "status": "未着手",
@@ -58,5 +58,29 @@
     "priority": "高",
     "quadrant": 1,
     "id": 5
+  },
+  {
+    "title": "えらー",
+    "description": null,
+    "owner_id": 7,
+    "created_by": null,
+    "due_date": null,
+    "status": "未着手",
+    "department": null,
+    "priority": "高",
+    "quadrant": 1,
+    "id": 6
+  },
+  {
+    "title": "えらー",
+    "description": null,
+    "owner_id": 7,
+    "created_by": null,
+    "due_date": null,
+    "status": "未着手",
+    "department": null,
+    "priority": "高",
+    "quadrant": 1,
+    "id": 7
   }
 ]
