@@ -44,10 +44,10 @@ export function openForm(taskId = null) {
   setEditingId(taskId);
   resetFormStatus();
   if (!elements.taskForm) return;
-  
+
   // メンバー選択肢を最新の状態に更新
   updateOwnerOptions();
-  
+
   if (taskId) {
     const task = state.tasks.find((item) => item.id === taskId);
     if (!task) return;
@@ -74,7 +74,9 @@ export function openForm(taskId = null) {
   } else {
     elements.taskDialog?.classList.add("modal--open");
   }
-  elements.deleteTaskBtn.style.display = getEditingId() ? "inline-flex" : "none";
+  elements.deleteTaskBtn.style.display = getEditingId()
+    ? "inline-flex"
+    : "none";
 }
 
 /**
@@ -160,12 +162,12 @@ function updateOwnerOptions() {
   if (!elements.taskForm?.owner_id) return;
   const ownerSelect = elements.taskForm.owner_id;
   const currentValue = ownerSelect.value; // 現在選択されている値を保存
-  
+
   // 最初の「-- 選択してください --」オプション以外を削除
   while (ownerSelect.options.length > 1) {
     ownerSelect.remove(1);
   }
-  
+
   // state.staffの内容に基づいて新しいオプションを追加
   state.staff.forEach((person) => {
     const option = document.createElement("option");
@@ -173,9 +175,12 @@ function updateOwnerOptions() {
     option.textContent = person.name;
     ownerSelect.appendChild(option);
   });
-  
+
   // 元の選択値を復元（存在する場合）
-  if (currentValue && Array.from(ownerSelect.options).some(opt => opt.value === currentValue)) {
+  if (
+    currentValue &&
+    Array.from(ownerSelect.options).some((opt) => opt.value === currentValue)
+  ) {
     ownerSelect.value = currentValue;
   }
 }
@@ -255,7 +260,9 @@ export async function handleDelete() {
     // タスクの削除
     try {
       await deleteTask(currentDeleteTargetId);
-      state.tasks = state.tasks.filter((task) => task.id !== currentDeleteTargetId);
+      state.tasks = state.tasks.filter(
+        (task) => task.id !== currentDeleteTargetId
+      );
       updateAllViews();
       closeConfirm();
       closeForm();
@@ -267,7 +274,9 @@ export async function handleDelete() {
     // メンバーの削除
     try {
       await deleteStaff(currentDeleteTargetStaffId);
-      state.staff = state.staff.filter((s) => s.id !== currentDeleteTargetStaffId);
+      state.staff = state.staff.filter(
+        (s) => s.id !== currentDeleteTargetStaffId
+      );
       renderStaff();
       renderBoard();
       updateAllViews();
@@ -354,6 +363,9 @@ export async function handleStaffSubmit(event) {
   event.preventDefault();
   if (!elements.staffForm) return;
 
+  // ステータスメッセージを表示（AI画像生成には数秒かかる可能性があるため）
+  resetStaffFormStatus("AIで画像を生成中です…（数秒かかることがあります）");
+
   // FormDataを作成し、フィールド名をAPIが期待する形式に変換
   const formData = new FormData(elements.staffForm);
   // staff_name を name に変換（バックエンドAPIは name を期待しているため）
@@ -362,7 +374,7 @@ export async function handleStaffSubmit(event) {
     formData.set("name", staffName);
     formData.delete("staff_name");
   }
-  
+
   const currentEditingStaffId = getEditingStaffId();
 
   try {
@@ -377,6 +389,8 @@ export async function handleStaffSubmit(event) {
     renderStaff();
     renderBoard();
     updateAllViews();
+    // 正常終了時はステータスメッセージをクリア
+    resetStaffFormStatus("");
     closeStaffForm();
   } catch (error) {
     resetStaffFormStatus(
@@ -433,7 +447,9 @@ function updateAllViews() {
   }
   // デンジャーリストが表示されている場合は更新
   if (
-    document.getElementById("dangerTab")?.classList.contains("tab-panel--active")
+    document
+      .getElementById("dangerTab")
+      ?.classList.contains("tab-panel--active")
   ) {
     renderDangerList();
   }
@@ -446,4 +462,3 @@ function updateAllViews() {
     renderCompleted();
   }
 }
-

@@ -24,12 +24,23 @@ class StaffCreate(BaseModel):
     name: str = Field(..., max_length=50)
     department: Optional[str] = Field(None, max_length=50)
     photo: Optional[str] = None
+    # 第1〜第4象限用の画像ファイル名
+    # - create_staff 時にGemini / Nano Banana Proで自動生成された画像のファイル名を格納します
+    photo_q1: Optional[str] = None
+    photo_q2: Optional[str] = None
+    photo_q3: Optional[str] = None
+    photo_q4: Optional[str] = None
 
 
 class StaffUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=50)
     department: Optional[str] = Field(None, max_length=50)
     photo: Optional[str] = None
+    # 既存メンバーの画像を差し替える場合に、第1〜第4象限用の画像ファイル名を更新します
+    photo_q1: Optional[str] = None
+    photo_q2: Optional[str] = None
+    photo_q3: Optional[str] = None
+    photo_q4: Optional[str] = None
 
 
 class TaskBase(BaseModel):

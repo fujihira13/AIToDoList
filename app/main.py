@@ -5,6 +5,7 @@ All business copy on the UI stays in Japanese, but the backend is plain FastAPI.
 
 from __future__ import annotations
 
+import os
 import shutil
 from pathlib import Path
 from typing import Dict, List
@@ -16,11 +17,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from . import repository, schemas
+from . import gemini_client, repository, schemas
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 AVATARS_DIR = BASE_DIR / "static" / "avatars"
+
+# Gemini / Nano Banana Pro による自動アバター生成機能のON/OFFフラグ
+# - GEMINI_ENABLED が "0" / "false" / "no" のいずれかなら無効
+# - それ以外、かつ GEMINI_API_KEY が設定されている場合は有効とみなす
+_GEMINI_ENABLED_RAW = os.getenv("GEMINI_ENABLED", "true").lower()
+GEMINI_ENABLED = _GEMINI_ENABLED_RAW not in {"0", "false", "no"}
 
 app = FastAPI(title="Eisenhower Board", version="0.2.0")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -193,24 +200,63 @@ async def api_create_staff(
     """メンバーを追加します。アバター画像をアップロードできます。"""
     # 画像ファイルを保存
     photo_filename = None
+    base_image_path = None
     if photo and photo.filename:
         # ファイル拡張子を取得
         ext = Path(photo.filename).suffix or ".png"
         # ユニークなファイル名を生成
         filename = f"{uuid4()}{ext}"
         file_path = AVATARS_DIR / filename
+        base_image_path = file_path
         
         # ファイルを保存
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(photo.file, buffer)
         
         photo_filename = filename
+
+    # 象限ごとのアバター画像をGemini / Nano Banana Proで生成
+    photo_q1 = photo_q2 = photo_q3 = photo_q4 = None
+    if GEMINI_ENABLED and base_image_path is not None:
+        try:
+            avatars = await gemini_client.generate_quadrant_avatars(
+                image_path=base_image_path,
+                staff_name=name,
+            )
+            # 生成された画像をファイルに保存
+            avatar_ext = base_image_path.suffix or ".png"
+
+            def _save_avatar(data: bytes, quadrant: int) -> str:
+                avatar_filename = f"{uuid4()}_q{quadrant}{avatar_ext}"
+                avatar_path = AVATARS_DIR / avatar_filename
+                avatar_path.write_bytes(data)
+                return avatar_filename
+
+            if "q1" in avatars:
+                photo_q1 = _save_avatar(avatars["q1"], 1)
+            if "q2" in avatars:
+                photo_q2 = _save_avatar(avatars["q2"], 2)
+            if "q3" in avatars:
+                photo_q3 = _save_avatar(avatars["q3"], 3)
+            if "q4" in avatars:
+                photo_q4 = _save_avatar(avatars["q4"], 4)
+        except gemini_client.GeminiConfigError:
+            # APIキーなどの設定が不足している場合は、AI生成なしで登録を続行
+            # （ログだけ残したい場合は print などで対応可能）
+            pass
+        except gemini_client.GeminiAPIError:
+            # モデル呼び出しでエラーが発生した場合も、元画像のみで登録を続行
+            pass
     
     # メンバーを作成
     payload = schemas.StaffCreate(
         name=name,
         department=department if department else None,
         photo=photo_filename,
+        photo_q1=photo_q1,
+        photo_q2=photo_q2,
+        photo_q3=photo_q3,
+        photo_q4=photo_q4,
     )
     created = repo.create_staff(payload)
     return created
@@ -231,6 +277,8 @@ async def api_update_staff(
     
     # 画像ファイルを保存
     photo_filename = None
+    base_image_path = None
+    new_image_uploaded = bool(photo and photo.filename)
     if photo and photo.filename:
         # 古い画像ファイルを削除
         for key in ["photo", "photo_q1", "photo_q2", "photo_q3", "photo_q4"]:
@@ -244,6 +292,7 @@ async def api_update_staff(
         # ユニークなファイル名を生成
         filename = f"{uuid4()}{ext}"
         file_path = AVATARS_DIR / filename
+        base_image_path = file_path
         
         # ファイルを保存
         with file_path.open("wb") as buffer:
@@ -253,13 +302,54 @@ async def api_update_staff(
     else:
         # 画像がアップロードされていない場合は既存の画像を保持
         photo_filename = staff.get("photo")
+
+    # 新しい画像がアップロードされた場合のみ、象限ごとのアバター画像を再生成
+    photo_q1 = photo_q2 = photo_q3 = photo_q4 = None
+    if new_image_uploaded and GEMINI_ENABLED and base_image_path is not None:
+        try:
+            avatars = await gemini_client.generate_quadrant_avatars(
+                image_path=base_image_path,
+                staff_name=name,
+            )
+            avatar_ext = base_image_path.suffix or ".png"
+
+            def _save_avatar(data: bytes, quadrant: int) -> str:
+                avatar_filename = f"{uuid4()}_q{quadrant}{avatar_ext}"
+                avatar_path = AVATARS_DIR / avatar_filename
+                avatar_path.write_bytes(data)
+                return avatar_filename
+
+            if "q1" in avatars:
+                photo_q1 = _save_avatar(avatars["q1"], 1)
+            if "q2" in avatars:
+                photo_q2 = _save_avatar(avatars["q2"], 2)
+            if "q3" in avatars:
+                photo_q3 = _save_avatar(avatars["q3"], 3)
+            if "q4" in avatars:
+                photo_q4 = _save_avatar(avatars["q4"], 4)
+        except gemini_client.GeminiConfigError:
+            # 設定不足の場合は象限画像を再生成せず、photo のみ更新
+            pass
+        except gemini_client.GeminiAPIError:
+            # 生成に失敗した場合も、photo の更新だけ行う
+            pass
     
     # メンバーを更新
-    payload = schemas.StaffUpdate(
-        name=name,
-        department=department if department else None,
-        photo=photo_filename,
-    )
+    update_kwargs = {
+        "name": name,
+        "department": department if department else None,
+        "photo": photo_filename,
+    }
+    # 新しい画像をアップロードした場合のみ、photo_q1〜photo_q4 を更新対象に含める
+    if new_image_uploaded:
+        update_kwargs.update(
+            photo_q1=photo_q1,
+            photo_q2=photo_q2,
+            photo_q3=photo_q3,
+            photo_q4=photo_q4,
+        )
+
+    payload = schemas.StaffUpdate(**update_kwargs)
     updated = repo.update_staff(staff_id, payload)
     return updated
 
