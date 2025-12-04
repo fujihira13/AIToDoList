@@ -27,6 +27,7 @@ import {
   moveTask,
 } from "./events.js";
 import { renderBoard, renderStaff } from "./render.js";
+import { generateTestImage } from "./api.js";
 
 /**
  * アプリケーションの初期化
@@ -120,6 +121,40 @@ function init() {
   document.addEventListener("moveTask", (event) => {
     moveTask(event.detail.taskId, event.detail.quadrant);
   });
+
+  // Gemini テスト用ボタン
+  if (
+    elements.geminiTestBtn &&
+    elements.geminiTestPrompt &&
+    elements.geminiTestResult
+  ) {
+    elements.geminiTestBtn.addEventListener("click", async () => {
+      const prompt =
+        elements.geminiTestPrompt.value.trim() ||
+        "コスプレしたバナナの画像を生成してください。";
+
+      elements.geminiTestBtn.disabled = true;
+      const originalLabel = elements.geminiTestBtn.textContent;
+      elements.geminiTestBtn.textContent = "生成中…";
+      elements.geminiTestResult.textContent =
+        "Gemini API を呼び出しています…";
+
+      try {
+        const data = await generateTestImage(prompt);
+        elements.geminiTestResult.innerHTML = `
+          <p>生成された画像（static/avatars 配下に保存されています）:</p>
+          <img src="${data.url}" alt="Geminiテスト画像" class="avatar" />
+          <p>ファイル名: ${data.filename}</p>
+        `;
+      } catch (error) {
+        elements.geminiTestResult.textContent =
+          error.message || "画像の生成に失敗しました";
+      } finally {
+        elements.geminiTestBtn.disabled = false;
+        elements.geminiTestBtn.textContent = originalLabel || "テスト画像を生成";
+      }
+    });
+  }
 
   // 初期レンダリング
   renderBoard();

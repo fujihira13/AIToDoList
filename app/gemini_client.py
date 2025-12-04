@@ -16,13 +16,15 @@ Gemini / Nano Banana Pro 用の画像生成クライアントモジュール。
 
 from __future__ import annotations
 
-import base64
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
+from uuid import uuid4
+import mimetypes
 
-import httpx
+import google.genai as genai
+from google.genai import types as genai_types
 
 
 class GeminiConfigError(RuntimeError):
@@ -74,9 +76,11 @@ class GeminiSettings:
 
         endpoint = os.getenv(
             "GEMINI_API_ENDPOINT",
-            "https://generativelanguage.googleapis.com/v1beta",
+            "https://generativelanguage.googleapis.com",
         )
-        model = os.getenv("GEMINI_IMAGE_MODEL", "models/gemini-1.5-flash")
+        # 画像生成用のデフォルトモデルは gemini-2.5-flash-image を使用します。
+        # 必要に応じて GEMINI_IMAGE_MODEL 環境変数で上書きしてください。
+        model = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
         return cls(api_key=api_key, endpoint=endpoint, model=model)
 
 
@@ -88,14 +92,11 @@ async def _generate_single_image(
     """
     1枚の入力画像 + テキストプロンプトから、1枚の画像を生成してバイナリを返します。
 
-    実装イメージ:
-    - 入力画像を読み込んで base64 文字列に変換
-    - Gemini / Nano Banana Pro の `generateContent` などのエンドポイントを呼び出す
-    - レスポンスの `inlineData` から生成された画像の base64 データを取り出し、元のバイナリに戻す
-
-    注意:
-    - 実際のレスポンス形式は利用するモデルやAPI仕様により多少異なる可能性があります。
-      必要に応じて公式ドキュメントに合わせてフィールド名を調整してください。
+    実装イメージ（SDK版）:
+    - 画像ファイルをバイト列として読み込む
+    - google-genai の `GenerativeModel` に対して
+      「テキストパート＋画像パート」をまとめて渡し、`generate_content` を実行
+    - レスポンスの `inline_data` から生成された画像バイト列を取り出す
     """
 
     if not image_path.exists():
@@ -103,67 +104,95 @@ async def _generate_single_image(
 
     # 画像ファイルをバイナリとして読み込む
     image_bytes = image_path.read_bytes()
-    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-
-    # 公式Geminiの generateContent を想定したペイロード構造
-    # Nano Banana Pro を使う場合も、基本的には
-    # 「テキスト + 画像（inlineData）」という構造は似ています。
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": prompt,
-                    },
-                    {
-                        "inlineData": {
-                            # ここでは汎用的に image/png を使います。
-                            # 必要に応じて元画像のMIMEタイプに合わせて変更してください。
-                            "mimeType": "image/png",
-                            "data": image_b64,
-                        }
-                    },
-                ]
-            }
-        ]
-    }
-
-    url = f"{settings.endpoint}/{settings.model}:generateContent"
-    params = {"key": settings.api_key}
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(url, params=params, json=payload)
-    except httpx.HTTPError as exc:
-        # ネットワークエラーなど
-        raise GeminiAPIError(f"Gemini API への接続に失敗しました: {exc}") from exc
+        # SDKのクライアントを初期化
+        client = genai.Client(api_key=settings.api_key)
 
-    if resp.status_code >= 400:
-        # エラー時のメッセージを分かりやすくする
-        try:
-            data = resp.json()
-        except Exception:
-            data = {}
-        detail = data.get("error", {}).get("message") if isinstance(data, dict) else None
-        msg = detail or f"Gemini API エラー (status={resp.status_code})"
-        raise GeminiAPIError(msg)
+        # google-genai の型（Content / Part）を使って
+        # 「テキスト + 画像」の入力を組み立てる
+        # from_text / from_bytes はキーワード引数で渡す必要がある
+        text_part = genai_types.Part.from_text(text=prompt)
+        image_part = genai_types.Part.from_bytes(
+            mime_type="image/png",
+            data=image_bytes,
+        )
+        content = genai_types.Content(
+            role="user",
+            parts=[text_part, image_part],
+        )
 
-    data = resp.json()
+        # テキスト＋画像をまとめて渡して画像生成を依頼
+        response = client.models.generate_content(
+            model=settings.model,
+            contents=[content],
+        )
+    except Exception as exc:  # SDKレイヤーでのエラー
+        raise GeminiAPIError(f"Gemini SDK の呼び出しに失敗しました: {exc}") from exc
 
-    # レスポンスから画像（inlineData）を探す
+    # レスポンスから画像（inline_data）を探す
     try:
-        candidates = data.get("candidates") or []
-        for cand in candidates:
-            content = cand.get("content") or {}
-            parts = content.get("parts") or []
-            for part in parts:
-                inline = part.get("inlineData")
-                if inline and "data" in inline:
-                    return base64.b64decode(inline["data"])
-    except Exception as exc:  # 解析時の予期せぬエラー
-        raise GeminiAPIError(f"Gemini API レスポンスの解析に失敗しました: {exc}") from exc
+        for candidate in getattr(response, "candidates", []) or []:
+            content = getattr(candidate, "content", None)
+            if not content:
+                continue
+            for part in getattr(content, "parts", []) or []:
+                inline = getattr(part, "inline_data", None)
+                if inline is not None and getattr(inline, "data", None):
+                    # inline.data はすでにバイト列である想定
+                    return inline.data
+    except Exception as exc:
+        raise GeminiAPIError(f"Gemini SDK レスポンスの解析に失敗しました: {exc}") from exc
 
-    raise GeminiAPIError("Gemini API から画像データが返されませんでした。設定やモデルを確認してください。")
+    raise GeminiAPIError("Gemini SDK から画像データが返されませんでした。モデルやレスポンス形式を確認してください。")
+
+
+async def _generate_image_from_text(
+    prompt: str,
+    settings: GeminiSettings,
+) -> bytes:
+    """
+    テキストプロンプトのみから1枚の画像を生成し、バイト列として返します。
+
+    - 元画像（アップロード画像）は使わず、「こういう雰囲気の画像を作って」と頼む形です。
+    - まずはAPIの挙動を確認するための簡易版として利用します。
+    """
+
+    # SDKのクライアントを初期化
+    try:
+        client = genai.Client(api_key=settings.api_key)
+
+        content = genai_types.Content(
+            role="user",
+            parts=[genai_types.Part.from_text(text=prompt)],
+        )
+
+        generate_config = genai_types.GenerateContentConfig(
+            response_modalities=["IMAGE", "TEXT"],
+        )
+
+        response = client.models.generate_content(
+            model=settings.model,
+            contents=[content],
+            config=generate_config,
+        )
+    except Exception as exc:
+        raise GeminiAPIError(f"Gemini SDK の呼び出しに失敗しました: {exc}") from exc
+
+    # レスポンスから画像（inline_data）を探す
+    try:
+        for candidate in getattr(response, "candidates", []) or []:
+            content = getattr(candidate, "content", None)
+            if not content:
+                continue
+            for part in getattr(content, "parts", []) or []:
+                inline = getattr(part, "inline_data", None)
+                if inline is not None and getattr(inline, "data", None):
+                    return inline.data
+    except Exception as exc:
+        raise GeminiAPIError(f"Gemini SDK レスポンスの解析に失敗しました: {exc}") from exc
+
+    raise GeminiAPIError("テキストのみからの画像生成で画像データが返されませんでした。モデル設定を確認してください。")
 
 
 async def generate_quadrant_avatars(
@@ -221,10 +250,82 @@ async def generate_quadrant_avatars(
 
     results: Dict[str, bytes] = {}
     # 1つずつ順番に生成（実装をシンプルにするため）
+    # ※ 現時点ではアップロード画像（image_path）は使用せず、テキストから直接生成します。
     for key, prompt in prompts.items():
-        img_bytes = await _generate_single_image(image_path=image_path, prompt=prompt, settings=settings)
+        img_bytes = await _generate_image_from_text(prompt=prompt, settings=settings)
         results[key] = img_bytes
 
     return results
+
+
+async def generate_test_image_from_text(
+    prompt: str,
+    output_dir: Path,
+) -> str:
+    """
+    単純なテキストプロンプトから 1 枚の画像を生成し、ファイルとして保存します。
+
+    - 公式の Google AI Studio サンプルコードをベースにした構成です。
+    - UI からの「お試しボタン」で Gemini API が正しく動いているか確認する用途を想定しています。
+
+    戻り値:
+        保存したファイル名（相対パスではなくファイル名のみ）
+    """
+
+    settings = GeminiSettings.from_env()
+
+    # クライアントを初期化
+    client = genai.Client(api_key=settings.api_key)
+
+    # テキストのみで Content を組み立てる
+    contents = [
+        genai_types.Content(
+            role="user",
+            parts=[
+                genai_types.Part.from_text(text=prompt),
+            ],
+        )
+    ]
+
+    # 画像を返してほしいことを明示する
+    generate_config = genai_types.GenerateContentConfig(
+        response_modalities=["IMAGE", "TEXT"],
+    )
+
+    # ストリーミングレスポンスから最初の画像を見つけて保存
+    try:
+        stream = client.models.generate_content_stream(
+            model=settings.model,
+            contents=contents,
+            config=generate_config,
+        )
+    except Exception as exc:
+        raise GeminiAPIError(f"Gemini SDK の呼び出しに失敗しました: {exc}") from exc
+
+    for chunk in stream:
+        candidates = getattr(chunk, "candidates", None) or []
+        if not candidates:
+            continue
+        content = candidates[0].content
+        if not content or not getattr(content, "parts", None):
+            continue
+        part = content.parts[0]
+        inline = getattr(part, "inline_data", None)
+        if inline is None or getattr(inline, "data", None) is None:
+            # 画像でない場合はテキストとしてログに出すだけ
+            text = getattr(chunk, "text", None)
+            if text:
+                print(f"[GeminiTest text] {text}")
+            continue
+
+        data_bytes = inline.data
+        mime_type = getattr(inline, "mime_type", "image/png")
+        ext = mimetypes.guess_extension(mime_type) or ".png"
+        filename = f"gemini_test_{uuid4().hex}{ext}"
+        output_path = output_dir / filename
+        output_path.write_bytes(data_bytes)
+        return filename
+
+    raise GeminiAPIError("テスト画像が生成されませんでした。モデル設定とレスポンスを確認してください。")
 
 

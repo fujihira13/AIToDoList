@@ -155,6 +155,38 @@ async def api_tasks() -> Dict[str, List[Dict]]:
 
 
 @app.post(
+    "/api/gemini/test-image",
+    response_model=schemas.GeminiTestResponse,
+)
+async def api_gemini_test_image(payload: schemas.GeminiTestRequest) -> Dict:
+    """
+    Gemini API が正しく動作しているかを確認するためのテスト用エンドポイント。
+
+    - 入力: テキストプロンプト（どんな画像を作ってほしいか）
+    - 出力: 生成された画像ファイル名と URL
+    """
+    if not GEMINI_ENABLED:
+        raise HTTPException(status_code=400, detail="Gemini 機能が無効になっています。GEMINI_ENABLED を確認してください。")
+
+    try:
+        filename = await gemini_client.generate_test_image_from_text(
+            prompt=payload.prompt,
+            output_dir=AVATARS_DIR,
+        )
+    except gemini_client.GeminiConfigError as exc:
+        # APIキー未設定などの設定エラー
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except gemini_client.GeminiAPIError as exc:
+        # モデル側・レスポンス側の問題
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return {
+        "filename": filename,
+        "url": f"/static/avatars/{filename}",
+    }
+
+
+@app.post(
     "/api/tasks",
     response_model=schemas.TaskOut,
     status_code=status.HTTP_201_CREATED,
@@ -240,13 +272,12 @@ async def api_create_staff(
                 photo_q3 = _save_avatar(avatars["q3"], 3)
             if "q4" in avatars:
                 photo_q4 = _save_avatar(avatars["q4"], 4)
-        except gemini_client.GeminiConfigError:
+        except gemini_client.GeminiConfigError as exc:
             # APIキーなどの設定が不足している場合は、AI生成なしで登録を続行
-            # （ログだけ残したい場合は print などで対応可能）
-            pass
-        except gemini_client.GeminiAPIError:
+            print(f"[GeminiConfigError@create_staff] {exc}")
+        except gemini_client.GeminiAPIError as exc:
             # モデル呼び出しでエラーが発生した場合も、元画像のみで登録を続行
-            pass
+            print(f"[GeminiAPIError@create_staff] {exc}")
     
     # メンバーを作成
     payload = schemas.StaffCreate(
@@ -327,12 +358,12 @@ async def api_update_staff(
                 photo_q3 = _save_avatar(avatars["q3"], 3)
             if "q4" in avatars:
                 photo_q4 = _save_avatar(avatars["q4"], 4)
-        except gemini_client.GeminiConfigError:
+        except gemini_client.GeminiConfigError as exc:
             # 設定不足の場合は象限画像を再生成せず、photo のみ更新
-            pass
-        except gemini_client.GeminiAPIError:
+            print(f"[GeminiConfigError@update_staff] {exc}")
+        except gemini_client.GeminiAPIError as exc:
             # 生成に失敗した場合も、photo の更新だけ行う
-            pass
+            print(f"[GeminiAPIError@update_staff] {exc}")
     
     # メンバーを更新
     update_kwargs = {

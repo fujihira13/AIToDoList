@@ -329,6 +329,30 @@
       </div>
     </dialog>
 
+    <!-- Gemini テスト用の簡易UI -->
+    <section class="gemini-test" style="margin: 2rem;">
+      <h2>Gemini 画像テスト</h2>
+      <p>
+        API キーやモデルの設定が正しく動作しているかを確認するためのテストです。
+        下のプロンプトを編集して「テスト画像を生成」を押すと、1枚だけ画像を生成します。
+      </p>
+      <label class="form-field">
+        <span>画像プロンプト</span>
+        <input
+          type="text"
+          id="geminiTestPrompt"
+          maxlength="300"
+          placeholder="例: コスプレしたバナナの画像を生成してください。"
+        />
+      </label>
+      <div style="margin-top: 0.5rem;">
+        <button type="button" class="btn btn--secondary" id="geminiTestBtn">
+          テスト画像を生成
+        </button>
+      </div>
+      <div id="geminiTestResult" class="gemini-test__result" style="margin-top: 1rem;"></div>
+    </section>
+
     <footer class="page-footer" style="display: none"></footer>
 
     <script id="initial-data" type="application/json">

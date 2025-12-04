@@ -142,3 +142,15 @@ export async function deleteStaff(staffId) {
   });
 }
 
+/**
+ * Geminiテスト用の画像を生成します
+ * @param {string} prompt - 生成したい画像の説明文
+ * @returns {Promise<{filename: string, url: string}>}
+ */
+export async function generateTestImage(prompt) {
+  return request("/api/gemini/test-image", {
+    method: "POST",
+    body: JSON.stringify({ prompt }),
+  });
+}
+

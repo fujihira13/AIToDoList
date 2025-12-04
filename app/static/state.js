@@ -138,6 +138,9 @@ export const elements = {
   submitStaffBtn: document.getElementById("submitStaffBtn"),
   deleteStaffBtn: document.getElementById("deleteStaffBtn"),
   confirmMessage: document.getElementById("confirmMessage"),
+  geminiTestPrompt: document.getElementById("geminiTestPrompt"),
+  geminiTestBtn: document.getElementById("geminiTestBtn"),
+  geminiTestResult: document.getElementById("geminiTestResult"),
 };
 
 // 定数

@@ -52,7 +52,7 @@ Visit `http://127.0.0.1:8000/` in Chrome. The UI fetches data from the API and s
 
 `requirements.txt` に以下が追加されています:
 
-- `httpx` – Gemini / Nano Banana Pro Web API を叩くための HTTP クライアント
+- `google-genai` – Gemini / Nano Banana Pro Web API を叩くための公式 Gemini Python SDK
 
 ### 2. 必要な環境変数
 
@@ -62,10 +62,11 @@ Gemini / Nano Banana Pro による自動生成を有効化するには、以下�
   - 必須。Gemini または Nano Banana Pro の API キーを設定します。
 - `GEMINI_API_ENDPOINT`
   - 任意。API ベース URL。未設定の場合は公式 Gemini のエンドポイント  
-    `https://generativelanguage.googleapis.com/v1beta` を使用します。
+    `https://generativelanguage.googleapis.com` を使用します。
 - `GEMINI_IMAGE_MODEL`
   - 任意。画像生成・編集に使うモデル名。未設定の場合は  
-    `models/gemini-1.5-flash` を使用します。  
+    `gemini-2.5-flash-image` を使用します。
+  - モデルを切り替えたい場合は、この値だけ変更します（例: `gemini-2.0-pro`）。  
     （Nano Banana Pro を利用する場合は、提供されているモデル名を指定してください）
 - `GEMINI_ENABLED`
   - 任意。`"0"`, `"false"`, `"no"` のいずれかを設定すると Gemini 経由の画像生成を無効化します。
@@ -75,8 +76,13 @@ PowerShell の例:
 
 ```powershell
 $env:GEMINI_API_KEY = "YOUR_API_KEY_HERE"
-$env:GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta"
-$env:GEMINI_IMAGE_MODEL = "models/gemini-1.5-flash"
+
+# モデルを変えたい場合だけ指定（省略すると gemini-2.5-flash-image が使われます）
+$env:GEMINI_IMAGE_MODEL = "gemini-2.0-pro"
+
+# エンドポイントは公式Geminiを使う場合は省略可（省略時は https://generativelanguage.googleapis.com）
+# $env:GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com"
+
 # オフにしたい場合（Geminiを呼ばずに従来通り1枚だけ使う）
 $env:GEMINI_ENABLED = "false"
 ```

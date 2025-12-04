@@ -86,3 +86,20 @@ class StaffList(BaseModel):
 
 class TaskList(BaseModel):
     tasks: list[TaskOut]
+
+
+class GeminiTestRequest(BaseModel):
+    """Gemini テスト用：1枚の画像を生成するための簡単なリクエストボディ。"""
+
+    prompt: str = Field(
+        ...,
+        max_length=300,
+        description="生成したい画像の説明文（プロンプト）",
+    )
+
+
+class GeminiTestResponse(BaseModel):
+    """Gemini テスト用：生成された画像ファイルの情報を返します。"""
+
+    filename: str
+    url: str
