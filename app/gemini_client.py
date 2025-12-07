@@ -202,6 +202,8 @@ async def generate_quadrant_avatars(
     """
     1枚の元画像から「4象限用のアバター画像」を生成します。
 
+    アップロードされた人物画像を元に、4種類の表情に編集した画像を生成します。
+
     戻り値のイメージ:
         {
             \"q1\": b\"...\",  # 第1象限（重要かつ緊急）用の画像バイナリ
@@ -210,11 +212,19 @@ async def generate_quadrant_avatars(
             \"q4\": b\"...\",  # 第4象限（重要でも緊急でもない）
         }
 
-    ここでは4回APIを呼び出して、それぞれ別のプロンプトで画像を生成しています。
-    （将来的にAPI側で「一度に複数パターン生成」がサポートされたら、1回の呼び出しにまとめることも可能です）
+    ここでは4回APIを呼び出して、それぞれ別のプロンプトで画像を編集しています。
     """
 
     settings = GeminiSettings.from_env()
+
+    if not image_path.exists():
+        raise GeminiAPIError(f"入力画像が見つかりません: {image_path}")
+
+    # 画像ファイルをバイナリとして読み込む
+    image_bytes = image_path.read_bytes()
+
+    # 画像のMIMEタイプを推測
+    mime_type = mimetypes.guess_type(str(image_path))[0] or "image/png"
 
     # 各象限ごとのプロンプト（日本語で丁寧に指示）
     # 重要ポイント:
@@ -228,32 +238,86 @@ async def generate_quadrant_avatars(
     prompts = {
         "q1": (
             base_intro
-            + "アイゼンハワーマトリクスの第1象限（重要かつ緊急）にふさわしい画像にします。"
-            "人物は怒っていて、時間や締め切りに追われているような緊迫した表情にしてください。"
+            + "人物は怒っていて、時間や締め切りに追われているような緊迫した表情にしてください。"
         ),
         "q2": (
             base_intro
-            + "アイゼンハワーマトリクスの第2象限（重要だが緊急ではない）にふさわしい画像にします。"
-            "人物は前向きでやる気に満ちた、落ち着いて計画的に仕事を進めているような表情にしてください。"
+            + "人物は前向きでやる気に満ちた、落ち着いて計画的に仕事を進めているような表情にしてください。"
         ),
         "q3": (
             base_intro
-            + "アイゼンハワーマトリクスの第3象限（緊急だが重要ではない）にふさわしい画像にします。"
-            "人物は電話や通知、雑務に追われて少し困っているような表情にしてください。"
+            + "人物は電話や通知、雑務に追われて少し困っているような表情にしてください。"
         ),
         "q4": (
             base_intro
-            + "アイゼンハワーマトリクスの第4象限（重要でも緊急でもない）にふさわしい画像にします。"
-            "人物がデスクでお茶を飲みながらリラックスしている、穏やかな表情の様子にしてください。"
+            + "人物がデスクでお茶を飲みながらリラックスしている、穏やかな表情の様子にしてください。"
         ),
     }
 
     results: Dict[str, bytes] = {}
-    # 1つずつ順番に生成（実装をシンプルにするため）
-    # ※ 現時点ではアップロード画像（image_path）は使用せず、テキストから直接生成します。
+
+    # 4つの表情を順番に生成
     for key, prompt in prompts.items():
-        img_bytes = await _generate_image_from_text(prompt=prompt, settings=settings)
-        results[key] = img_bytes
+        print(f"[GenerateQuadrantAvatars] 生成中: {key} ({staff_name})")
+        try:
+            # SDKのクライアントを初期化
+            client = genai.Client(api_key=settings.api_key)
+
+            # テキストパートと画像パートを作成
+            text_part = genai_types.Part.from_text(text=prompt)
+            image_part = genai_types.Part.from_bytes(
+                mime_type=mime_type,
+                data=image_bytes,
+            )
+
+            content = genai_types.Content(
+                role="user",
+                parts=[text_part, image_part],
+            )
+
+            # 画像を返してほしいことを明示する
+            generate_config = genai_types.GenerateContentConfig(
+                response_modalities=["IMAGE", "TEXT"],
+            )
+
+            # ストリーミングレスポンスから最初の画像を見つける
+            stream = client.models.generate_content_stream(
+                model=settings.model,
+                contents=[content],
+                config=generate_config,
+            )
+
+            img_data = None
+            for chunk in stream:
+                candidates = getattr(chunk, "candidates", None) or []
+                if not candidates:
+                    continue
+                chunk_content = candidates[0].content
+                if not chunk_content or not getattr(chunk_content, "parts", None):
+                    continue
+                part = chunk_content.parts[0]
+                inline = getattr(part, "inline_data", None)
+                if inline is None or getattr(inline, "data", None) is None:
+                    text = getattr(chunk, "text", None)
+                    if text:
+                        print(f"[GenerateQuadrantAvatars text] {text}")
+                    continue
+
+                img_data = inline.data
+                break
+
+            if img_data:
+                results[key] = img_data
+                print(f"[GenerateQuadrantAvatars] 完了: {key}")
+            else:
+                print(f"[GenerateQuadrantAvatars] 警告: {key}の画像生成でデータが返されませんでした。")
+
+        except Exception as exc:
+            print(f"[GenerateQuadrantAvatars] エラー: {key}の画像生成に失敗しました: {exc}")
+            # エラーが発生しても他の象限の生成を続ける
+
+    if not results:
+        raise GeminiAPIError("4つの表情画像の生成に全て失敗しました。")
 
     return results
 

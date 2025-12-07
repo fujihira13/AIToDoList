@@ -2,7 +2,7 @@
   {
     "title": "システム障害",
     "description": "システム障害がおきた",
-    "owner_id": 7,
+    "owner_id": 19,
     "created_by": "田中",
     "due_date": "2025-11-27",
     "status": "進行中",
@@ -38,13 +38,13 @@
   {
     "title": "コードエラー",
     "description": null,
-    "owner_id": 6,
+    "owner_id": 19,
     "created_by": null,
     "due_date": "2025-11-26",
     "status": "未着手",
     "department": null,
     "priority": "低",
-    "quadrant": 1,
+    "quadrant": 3,
     "id": 4
   },
   {
@@ -86,7 +86,7 @@
   {
     "title": "障害対応",
     "description": null,
-    "owner_id": 11,
+    "owner_id": 19,
     "created_by": null,
     "due_date": "2025-12-05",
     "status": "未着手",
@@ -122,7 +122,7 @@
   {
     "title": "お茶をください",
     "description": null,
-    "owner_id": 18,
+    "owner_id": 19,
     "created_by": null,
     "due_date": "2025-12-05",
     "status": "未着手",
