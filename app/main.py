@@ -187,6 +187,69 @@ async def api_gemini_test_image(payload: schemas.GeminiTestRequest) -> Dict:
 
 
 @app.post(
+    "/api/gemini/edit-image",
+    response_model=schemas.GeminiEditResponse,
+)
+async def api_gemini_edit_image(
+    prompt: str = Form(...),
+    photo: UploadFile = File(...),
+) -> Dict:
+    """
+    画像編集のテスト用エンドポイント。
+
+    - 入力:
+      - photo: 編集対象の画像ファイル（人物写真など）
+      - prompt: 編集内容の指示（例: 「怒っている表情にして」）
+    - 出力: 編集された画像ファイル名と URL
+
+    使い方の例:
+      人物の顔写真をアップロードして「この人物を怒っている表情にしてください」と
+      指示すると、その人物が怒っている画像が生成されます。
+    """
+    if not GEMINI_ENABLED:
+        raise HTTPException(
+            status_code=400,
+            detail="Gemini 機能が無効になっています。GEMINI_ENABLED を確認してください。"
+        )
+
+    if not photo or not photo.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="画像ファイルをアップロードしてください。"
+        )
+
+    # アップロードされた画像を一時保存
+    ext = Path(photo.filename).suffix or ".png"
+    temp_filename = f"temp_{uuid4()}{ext}"
+    temp_path = AVATARS_DIR / temp_filename
+
+    try:
+        # 画像を一時ファイルとして保存
+        with temp_path.open("wb") as buffer:
+            shutil.copyfileobj(photo.file, buffer)
+
+        # Geminiで画像を編集
+        filename = await gemini_client.edit_image_with_prompt(
+            image_path=temp_path,
+            prompt=prompt,
+            output_dir=AVATARS_DIR,
+        )
+    except gemini_client.GeminiConfigError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except gemini_client.GeminiAPIError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    finally:
+        # 一時ファイルを削除
+        if temp_path.exists():
+            temp_path.unlink()
+
+    return {
+        "filename": filename,
+        "url": f"/static/avatars/{filename}",
+    }
+
+
+@app.post(
     "/api/tasks",
     response_model=schemas.TaskOut,
     status_code=status.HTTP_201_CREATED,

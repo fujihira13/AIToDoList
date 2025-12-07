@@ -103,3 +103,10 @@ class GeminiTestResponse(BaseModel):
 
     filename: str
     url: str
+
+
+class GeminiEditResponse(BaseModel):
+    """Gemini 画像編集テスト用：編集された画像ファイルの情報を返します。"""
+
+    filename: str
+    url: str

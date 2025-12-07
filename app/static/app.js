@@ -27,7 +27,7 @@ import {
   moveTask,
 } from "./events.js";
 import { renderBoard, renderStaff } from "./render.js";
-import { generateTestImage } from "./api.js";
+import { generateTestImage, editImageWithPrompt } from "./api.js";
 
 /**
  * アプリケーションの初期化
@@ -152,6 +152,80 @@ function init() {
       } finally {
         elements.geminiTestBtn.disabled = false;
         elements.geminiTestBtn.textContent = originalLabel || "テスト画像を生成";
+      }
+    });
+  }
+
+  // Gemini 画像編集テスト用
+  // 画像プレビューの表示
+  if (elements.geminiEditPhoto && elements.geminiEditPreview) {
+    elements.geminiEditPhoto.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          elements.geminiEditPreview.innerHTML = `
+            <p style="margin-bottom: 0.5rem; color: #666;">アップロードした画像:</p>
+            <img src="${e.target.result}" alt="プレビュー" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;" />
+          `;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        elements.geminiEditPreview.innerHTML = "";
+      }
+    });
+  }
+
+  // 画像編集ボタン
+  if (
+    elements.geminiEditBtn &&
+    elements.geminiEditPhoto &&
+    elements.geminiEditPrompt &&
+    elements.geminiEditResult
+  ) {
+    elements.geminiEditBtn.addEventListener("click", async () => {
+      const file = elements.geminiEditPhoto.files[0];
+      if (!file) {
+        elements.geminiEditResult.textContent = "画像ファイルを選択してください。";
+        return;
+      }
+
+      const prompt =
+        elements.geminiEditPrompt.value.trim() ||
+        "この人物を怒っている表情にしてください。同じ人物であることが分かるように顔立ちや雰囲気を保ってください。";
+
+      elements.geminiEditBtn.disabled = true;
+      const originalLabel = elements.geminiEditBtn.textContent;
+      elements.geminiEditBtn.textContent = "編集中…";
+      elements.geminiEditResult.textContent =
+        "Gemini API で画像を編集しています… (数秒から数十秒かかることがあります)";
+
+      try {
+        const data = await editImageWithPrompt(file, prompt);
+        elements.geminiEditResult.innerHTML = `
+          <p style="color: #28a745; font-weight: bold;">✓ 画像の編集に成功しました！</p>
+          <p>編集された画像（static/avatars 配下に保存されています）:</p>
+          <div style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;">
+            <div>
+              <p style="margin-bottom: 0.5rem; color: #666;">元の画像:</p>
+              <img src="${elements.geminiEditPreview.querySelector("img")?.src || ""}" alt="元の画像" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;" />
+            </div>
+            <div style="font-size: 2rem; align-self: center;">→</div>
+            <div>
+              <p style="margin-bottom: 0.5rem; color: #666;">編集後の画像:</p>
+              <img src="${data.url}" alt="編集後の画像" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #28a745;" />
+            </div>
+          </div>
+          <p style="margin-top: 1rem;">ファイル名: ${data.filename}</p>
+        `;
+      } catch (error) {
+        elements.geminiEditResult.innerHTML = `
+          <p style="color: #dc3545; font-weight: bold;">✗ 画像の編集に失敗しました</p>
+          <p>${error.message || "不明なエラーが発生しました"}</p>
+        `;
+      } finally {
+        elements.geminiEditBtn.disabled = false;
+        elements.geminiEditBtn.textContent = originalLabel || "画像を編集";
       }
     });
   }

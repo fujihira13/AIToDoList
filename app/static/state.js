@@ -141,6 +141,12 @@ export const elements = {
   geminiTestPrompt: document.getElementById("geminiTestPrompt"),
   geminiTestBtn: document.getElementById("geminiTestBtn"),
   geminiTestResult: document.getElementById("geminiTestResult"),
+  // 画像編集テスト用
+  geminiEditPhoto: document.getElementById("geminiEditPhoto"),
+  geminiEditPreview: document.getElementById("geminiEditPreview"),
+  geminiEditPrompt: document.getElementById("geminiEditPrompt"),
+  geminiEditBtn: document.getElementById("geminiEditBtn"),
+  geminiEditResult: document.getElementById("geminiEditResult"),
 };
 
 // 定数

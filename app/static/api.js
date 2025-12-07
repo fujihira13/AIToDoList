@@ -154,3 +154,33 @@ export async function generateTestImage(prompt) {
   });
 }
 
+/**
+ * Geminiで画像を編集します
+ * @param {File} imageFile - 編集対象の画像ファイル
+ * @param {string} prompt - 編集内容の指示
+ * @returns {Promise<{filename: string, url: string}>}
+ */
+export async function editImageWithPrompt(imageFile, prompt) {
+  const formData = new FormData();
+  formData.append("photo", imageFile);
+  formData.append("prompt", prompt);
+
+  const response = await fetch("/api/gemini/edit-image", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let message = "画像の編集に失敗しました";
+    try {
+      const payload = await response.json();
+      if (typeof payload.detail === "string") message = payload.detail;
+    } catch (_) {
+      // ignore
+    }
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+
