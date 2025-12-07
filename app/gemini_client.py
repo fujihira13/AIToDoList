@@ -195,6 +195,88 @@ async def _generate_image_from_text(
     raise GeminiAPIError("テキストのみからの画像生成で画像データが返されませんでした。モデル設定を確認してください。")
 
 
+async def validate_person_image(
+    image_path: Path,
+    settings: GeminiSettings | None = None,
+) -> bool:
+    """
+    画像に人物が含まれているかを検証します。
+
+    引数:
+        image_path: 検証する画像のパス
+        settings: Gemini設定（省略時は環境変数から読み込み）
+
+    戻り値:
+        True: 人物が含まれている
+        False: 人物が含まれていない
+
+    例外:
+        GeminiAPIError: 検証に失敗した場合
+    """
+    if settings is None:
+        settings = GeminiSettings.from_env()
+
+    if not image_path.exists():
+        raise GeminiAPIError(f"入力画像が見つかりません: {image_path}")
+
+    image_bytes = image_path.read_bytes()
+    mime_type = mimetypes.guess_type(str(image_path))[0] or "image/png"
+
+    try:
+        client = genai.Client(api_key=settings.api_key)
+
+        # 人物が含まれているかを確認するプロンプト
+        prompt = (
+            "この画像に人物（人間の顔）が含まれているかどうかを判定してください。"
+            "人物が含まれている場合は「YES」、含まれていない場合は「NO」とだけ回答してください。"
+            "他の説明は不要です。"
+        )
+
+        text_part = genai_types.Part.from_text(text=prompt)
+        image_part = genai_types.Part.from_bytes(
+            mime_type=mime_type,
+            data=image_bytes,
+        )
+
+        content = genai_types.Content(
+            role="user",
+            parts=[text_part, image_part],
+        )
+
+        # テキストのみを返してもらう
+        generate_config = genai_types.GenerateContentConfig(
+            response_modalities=["TEXT"],
+        )
+
+        response = client.models.generate_content(
+            model=settings.model,
+            contents=[content],
+            config=generate_config,
+        )
+
+        # レスポンスからテキストを取得
+        response_text = ""
+        for candidate in getattr(response, "candidates", []) or []:
+            content = getattr(candidate, "content", None)
+            if not content:
+                continue
+            for part in getattr(content, "parts", []) or []:
+                text = getattr(part, "text", None)
+                if text:
+                    response_text += text
+
+        response_text = response_text.strip().upper()
+        print(f"[ValidatePersonImage] 検証結果: {response_text}")
+
+        return "YES" in response_text
+
+    except Exception as exc:
+        print(f"[ValidatePersonImage] 検証中にエラー: {exc}")
+        # 検証に失敗した場合は、安全のためTrueを返して処理を続行させる
+        # （厳密にしたい場合はFalseを返すか例外を送出）
+        return True
+
+
 async def generate_quadrant_avatars(
     image_path: Path,
     staff_name: str,
@@ -213,12 +295,24 @@ async def generate_quadrant_avatars(
         }
 
     ここでは4回APIを呼び出して、それぞれ別のプロンプトで画像を編集しています。
+
+    例外:
+        GeminiAPIError: 人物が含まれていない画像の場合、または生成に失敗した場合
     """
 
     settings = GeminiSettings.from_env()
 
     if not image_path.exists():
         raise GeminiAPIError(f"入力画像が見つかりません: {image_path}")
+
+    # 人物が含まれているかを事前チェック
+    print(f"[GenerateQuadrantAvatars] 人物検証中...")
+    is_person = await validate_person_image(image_path, settings)
+    if not is_person:
+        raise GeminiAPIError(
+            "アップロードされた画像に人物が検出されませんでした。"
+            "人物の顔が写っている画像をアップロードしてください。"
+        )
 
     # 画像ファイルをバイナリとして読み込む
     image_bytes = image_path.read_bytes()
@@ -434,12 +528,24 @@ async def generate_four_expressions(
             "q3": "ファイル名3.png",
             "q4": "ファイル名4.png",
         }
+
+    例外:
+        GeminiAPIError: 人物が含まれていない画像の場合、または生成に失敗した場合
     """
 
     settings = GeminiSettings.from_env()
 
     if not image_path.exists():
         raise GeminiAPIError(f"入力画像が見つかりません: {image_path}")
+
+    # 人物が含まれているかを事前チェック
+    print(f"[GeminiFourExpressions] 人物検証中...")
+    is_person = await validate_person_image(image_path, settings)
+    if not is_person:
+        raise GeminiAPIError(
+            "アップロードされた画像に人物が検出されませんでした。"
+            "人物の顔が写っている画像をアップロードしてください。"
+        )
 
     # 画像ファイルをバイナリとして読み込む
     image_bytes = image_path.read_bytes()
