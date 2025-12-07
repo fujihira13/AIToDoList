@@ -347,6 +347,136 @@ async def edit_image_with_prompt(
     raise GeminiAPIError("画像編集に失敗しました。モデル設定とレスポンスを確認してください。")
 
 
+async def generate_four_expressions(
+    image_path: Path,
+    output_dir: Path,
+) -> Dict[str, str]:
+    """
+    1枚の元画像から4種類の表情画像を生成してファイル保存します。
+
+    - q1: 怒っていて、時間や締め切りに追われているような緊迫した表情
+    - q2: 前向きでやる気に満ちた、落ち着いて計画的に仕事を進めているような表情
+    - q3: 電話や通知、雑務に追われて少し困っているような表情
+    - q4: デスクでお茶を飲みながらリラックスしている、穏やかな表情
+
+    引数:
+        image_path: 入力画像のパス（人物写真）
+        output_dir: 生成画像の保存先ディレクトリ
+
+    戻り値:
+        {
+            "q1": "ファイル名1.png",
+            "q2": "ファイル名2.png",
+            "q3": "ファイル名3.png",
+            "q4": "ファイル名4.png",
+        }
+    """
+
+    settings = GeminiSettings.from_env()
+
+    if not image_path.exists():
+        raise GeminiAPIError(f"入力画像が見つかりません: {image_path}")
+
+    # 画像ファイルをバイナリとして読み込む
+    image_bytes = image_path.read_bytes()
+
+    # 画像のMIMEタイプを推測
+    mime_type = mimetypes.guess_type(str(image_path))[0] or "image/png"
+
+    # 4種類の表情に対応するプロンプト
+    base_intro = (
+        "この画像の人物をもとに、同じ人物であることが分かるように顔立ちや雰囲気を保ったまま、"
+        "表情や状況だけを編集してください。背景はオフィスや仕事中の雰囲気で構いません。"
+    )
+
+    prompts = {
+        "q1": (
+            base_intro
+            + "人物は怒っていて、時間や締め切りに追われているような緊迫した表情にしてください。"
+        ),
+        "q2": (
+            base_intro
+            + "人物は前向きでやる気に満ちた、落ち着いて計画的に仕事を進めているような表情にしてください。"
+        ),
+        "q3": (
+            base_intro
+            + "人物は電話や通知、雑務に追われて少し困っているような表情にしてください。"
+        ),
+        "q4": (
+            base_intro
+            + "人物がデスクでお茶を飲みながらリラックスしている、穏やかな表情の様子にしてください。"
+        ),
+    }
+
+    results: Dict[str, str] = {}
+
+    # 4つの表情を順番に生成
+    for key, prompt in prompts.items():
+        print(f"[GeminiFourExpressions] 生成中: {key}")
+        try:
+            # SDKのクライアントを初期化
+            client = genai.Client(api_key=settings.api_key)
+
+            # テキストパートと画像パートを作成
+            text_part = genai_types.Part.from_text(text=prompt)
+            image_part = genai_types.Part.from_bytes(
+                mime_type=mime_type,
+                data=image_bytes,
+            )
+
+            content = genai_types.Content(
+                role="user",
+                parts=[text_part, image_part],
+            )
+
+            # 画像を返してほしいことを明示する
+            generate_config = genai_types.GenerateContentConfig(
+                response_modalities=["IMAGE", "TEXT"],
+            )
+
+            # ストリーミングレスポンスから最初の画像を見つけて保存
+            stream = client.models.generate_content_stream(
+                model=settings.model,
+                contents=[content],
+                config=generate_config,
+            )
+
+            filename = None
+            for chunk in stream:
+                candidates = getattr(chunk, "candidates", None) or []
+                if not candidates:
+                    continue
+                chunk_content = candidates[0].content
+                if not chunk_content or not getattr(chunk_content, "parts", None):
+                    continue
+                part = chunk_content.parts[0]
+                inline = getattr(part, "inline_data", None)
+                if inline is None or getattr(inline, "data", None) is None:
+                    text = getattr(chunk, "text", None)
+                    if text:
+                        print(f"[GeminiFourExpressions text] {text}")
+                    continue
+
+                data_bytes = inline.data
+                output_mime_type = getattr(inline, "mime_type", "image/png")
+                ext = mimetypes.guess_extension(output_mime_type) or ".png"
+                filename = f"gemini_expr_{key}_{uuid4().hex}{ext}"
+                output_path = output_dir / filename
+                output_path.write_bytes(data_bytes)
+                break
+
+            if filename:
+                results[key] = filename
+                print(f"[GeminiFourExpressions] 完了: {key} -> {filename}")
+            else:
+                raise GeminiAPIError(f"{key}の画像生成でデータが返されませんでした。")
+
+        except Exception as exc:
+            raise GeminiAPIError(f"{key}の画像生成に失敗しました: {exc}") from exc
+
+    return results
+
+
 async def generate_test_image_from_text(
     prompt: str,
     output_dir: Path,

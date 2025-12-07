@@ -110,3 +110,16 @@ class GeminiEditResponse(BaseModel):
 
     filename: str
     url: str
+
+
+class GeminiFourExpressionsResponse(BaseModel):
+    """Gemini 4表情生成テスト用：4種類の表情画像の情報を返します。"""
+
+    q1_filename: str
+    q1_url: str
+    q2_filename: str
+    q2_url: str
+    q3_filename: str
+    q3_url: str
+    q4_filename: str
+    q4_url: str

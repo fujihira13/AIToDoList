@@ -184,3 +184,31 @@ export async function editImageWithPrompt(imageFile, prompt) {
   return response.json();
 }
 
+/**
+ * Geminiで4種類の表情画像を生成します
+ * @param {File} imageFile - 元となる画像ファイル
+ * @returns {Promise<{q1_filename: string, q1_url: string, q2_filename: string, q2_url: string, q3_filename: string, q3_url: string, q4_filename: string, q4_url: string}>}
+ */
+export async function generateFourExpressions(imageFile) {
+  const formData = new FormData();
+  formData.append("photo", imageFile);
+
+  const response = await fetch("/api/gemini/four-expressions", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let message = "4表情の生成に失敗しました";
+    try {
+      const payload = await response.json();
+      if (typeof payload.detail === "string") message = payload.detail;
+    } catch (_) {
+      // ignore
+    }
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+

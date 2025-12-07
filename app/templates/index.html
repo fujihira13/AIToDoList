@@ -393,6 +393,41 @@
       <div id="geminiEditResult" class="gemini-test__result" style="margin-top: 1rem;"></div>
     </section>
 
+    <!-- Gemini 4表情生成テスト用のUI -->
+    <section class="gemini-test" style="margin: 2rem; border-top: 1px solid #ddd; padding-top: 2rem;">
+      <h2>Gemini 4表情生成テスト</h2>
+      <p>
+        1枚の人物画像から4種類の表情画像を一度に生成します。
+        アイゼンハワーマトリクスの各象限に対応した表情を自動生成します。
+      </p>
+      <ul style="margin: 1rem 0; padding-left: 1.5rem; font-size: 0.9rem; color: #666;">
+        <li><strong>Q1（重要かつ緊急）:</strong> 怒っていて、時間や締め切りに追われているような緊迫した表情</li>
+        <li><strong>Q2（重要だが緊急ではない）:</strong> 前向きでやる気に満ちた、落ち着いて計画的に仕事を進めているような表情</li>
+        <li><strong>Q3（緊急だが重要ではない）:</strong> 電話や通知、雑務に追われて少し困っているような表情</li>
+        <li><strong>Q4（重要でも緊急でもない）:</strong> デスクでお茶を飲みながらリラックスしている、穏やかな表情</li>
+      </ul>
+      <label class="form-field">
+        <span>元となる画像</span>
+        <input
+          type="file"
+          id="geminiFourPhoto"
+          accept="image/*"
+        />
+        <small class="helper-text">
+          ※人物の顔写真をアップロードしてください。4種類の表情が生成されます。
+        </small>
+      </label>
+      <div id="geminiFourPreview" style="margin: 0.5rem 0;">
+        <!-- アップロードした画像のプレビューがここに表示されます -->
+      </div>
+      <div style="margin-top: 0.5rem;">
+        <button type="button" class="btn btn--secondary" id="geminiFourBtn">
+          4種類の表情を生成
+        </button>
+      </div>
+      <div id="geminiFourResult" class="gemini-test__result" style="margin-top: 1rem;"></div>
+    </section>
+
     <footer class="page-footer" style="display: none"></footer>
 
     <script id="initial-data" type="application/json">

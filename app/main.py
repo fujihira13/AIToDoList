@@ -250,6 +250,73 @@ async def api_gemini_edit_image(
 
 
 @app.post(
+    "/api/gemini/four-expressions",
+    response_model=schemas.GeminiFourExpressionsResponse,
+)
+async def api_gemini_four_expressions(
+    photo: UploadFile = File(...),
+) -> Dict:
+    """
+    4種類の表情画像を生成するテスト用エンドポイント。
+
+    - 入力: 編集対象の画像ファイル（人物写真）
+    - 出力: 4種類の表情（怒り、やる気、困惑、リラックス）の画像ファイル
+
+    1つの画像から以下の4パターンを生成します：
+      - q1: 怒っていて、時間や締め切りに追われているような緊迫した表情
+      - q2: 前向きでやる気に満ちた、落ち着いて計画的に仕事を進めているような表情
+      - q3: 電話や通知、雑務に追われて少し困っているような表情
+      - q4: デスクでお茶を飲みながらリラックスしている、穏やかな表情
+    """
+    if not GEMINI_ENABLED:
+        raise HTTPException(
+            status_code=400,
+            detail="Gemini 機能が無効になっています。GEMINI_ENABLED を確認してください。"
+        )
+
+    if not photo or not photo.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="画像ファイルをアップロードしてください。"
+        )
+
+    # アップロードされた画像を一時保存
+    ext = Path(photo.filename).suffix or ".png"
+    temp_filename = f"temp_{uuid4()}{ext}"
+    temp_path = AVATARS_DIR / temp_filename
+
+    try:
+        # 画像を一時ファイルとして保存
+        with temp_path.open("wb") as buffer:
+            shutil.copyfileobj(photo.file, buffer)
+
+        # Geminiで4種類の表情を生成
+        filenames = await gemini_client.generate_four_expressions(
+            image_path=temp_path,
+            output_dir=AVATARS_DIR,
+        )
+    except gemini_client.GeminiConfigError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except gemini_client.GeminiAPIError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    finally:
+        # 一時ファイルを削除
+        if temp_path.exists():
+            temp_path.unlink()
+
+    return {
+        "q1_filename": filenames.get("q1", ""),
+        "q1_url": f"/static/avatars/{filenames.get('q1', '')}",
+        "q2_filename": filenames.get("q2", ""),
+        "q2_url": f"/static/avatars/{filenames.get('q2', '')}",
+        "q3_filename": filenames.get("q3", ""),
+        "q3_url": f"/static/avatars/{filenames.get('q3', '')}",
+        "q4_filename": filenames.get("q4", ""),
+        "q4_url": f"/static/avatars/{filenames.get('q4', '')}",
+    }
+
+
+@app.post(
     "/api/tasks",
     response_model=schemas.TaskOut,
     status_code=status.HTTP_201_CREATED,

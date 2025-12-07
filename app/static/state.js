@@ -147,6 +147,11 @@ export const elements = {
   geminiEditPrompt: document.getElementById("geminiEditPrompt"),
   geminiEditBtn: document.getElementById("geminiEditBtn"),
   geminiEditResult: document.getElementById("geminiEditResult"),
+  // 4表情生成テスト用
+  geminiFourPhoto: document.getElementById("geminiFourPhoto"),
+  geminiFourPreview: document.getElementById("geminiFourPreview"),
+  geminiFourBtn: document.getElementById("geminiFourBtn"),
+  geminiFourResult: document.getElementById("geminiFourResult"),
 };
 
 // 定数
