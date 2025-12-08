@@ -60,30 +60,6 @@
     "id": 5
   },
   {
-    "title": "えらー",
-    "description": null,
-    "owner_id": 19,
-    "created_by": null,
-    "due_date": null,
-    "status": "未着手",
-    "department": null,
-    "priority": "高",
-    "quadrant": 1,
-    "id": 6
-  },
-  {
-    "title": "えらー",
-    "description": null,
-    "owner_id": 19,
-    "created_by": null,
-    "due_date": null,
-    "status": "未着手",
-    "department": null,
-    "priority": "高",
-    "quadrant": 1,
-    "id": 7
-  },
-  {
     "title": "障害対応",
     "description": null,
     "owner_id": 19,
@@ -130,5 +106,17 @@
     "priority": "高",
     "quadrant": 4,
     "id": 11
+  },
+  {
+    "title": "てｓｔ",
+    "description": null,
+    "owner_id": 19,
+    "created_by": null,
+    "due_date": null,
+    "status": "未着手",
+    "department": null,
+    "priority": "高",
+    "quadrant": 1,
+    "id": 12
   }
 ]

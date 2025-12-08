@@ -367,7 +367,7 @@ export function renderDangerList() {
 }
 
 /**
- * デンジャーゲージを表示します
+ * デンジャーゲージを表示します（スタッフのアバターを大きく表示）
  */
 function renderDangerGauge() {
   if (!elements.dangerGauge) return;
@@ -375,20 +375,42 @@ function renderDangerGauge() {
   const dangerTasks = state.tasks.filter(
     (task) => task.quadrant === 1 && task.status !== "完了"
   );
-  const count = dangerTasks.length;
-  const isDanger = count >= 3;
-  const percentage = Math.min((count / 3) * 100, 100);
+
+  // スタッフごとにタスク数を集計
+  const staffMap = new Map();
+  dangerTasks.forEach((task) => {
+    const owner = findStaff(task.owner_id);
+    if (owner) {
+      if (!staffMap.has(owner.id)) {
+        staffMap.set(owner.id, { staff: owner, count: 0 });
+      }
+      staffMap.get(owner.id).count++;
+    }
+  });
+
+  // タスク数が多い順にソート
+  const staffList = Array.from(staffMap.values()).sort(
+    (a, b) => b.count - a.count
+  );
+
+  // アバターのHTML生成（写真のみ大きく表示）
+  const avatarsHtml = staffList.length > 0
+    ? staffList.map(({ staff, count }) => {
+        const isDanger = count >= 3;
+        return `
+          <div class="danger-avatar-item ${isDanger ? 'danger-avatar-item--critical' : ''}">
+            ${renderAvatar(staff, 1)}
+            ${isDanger ? '<span class="danger-avatar-item__badge">🔥</span>' : ''}
+          </div>
+        `;
+      }).join("")
+    : '<p class="danger-gauge__empty">重要かつ緊急のタスクはありません</p>';
 
   elements.dangerGauge.innerHTML = `
     <div class="danger-gauge">
-      <div class="danger-gauge__header">
-        <h2 class="danger-gauge__title">重要かつ緊急のタスク数</h2>
-        <div class="danger-gauge__count">${count}件</div>
+      <div class="danger-avatar-grid">
+        ${avatarsHtml}
       </div>
-      <div class="danger-gauge__meter">
-        <div class="danger-gauge__fill" style="width: ${percentage}%"></div>
-      </div>
-      ${isDanger ? '<div class="danger-gauge__warning">危険</div>' : ""}
     </div>
   `;
 }
