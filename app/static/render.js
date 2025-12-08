@@ -430,6 +430,9 @@ function renderDangerGauge() {
 function renderDangerStaffList() {
   if (!elements.dangerStaffList) return;
 
+  // 前回の表示をクリアして重複を防ぐ
+  elements.dangerStaffList.innerHTML = "";
+
   // DocumentFragmentを使用して一度に追加することでレイアウトのちらつきを防ぐ
   const fragment = document.createDocumentFragment();
 
