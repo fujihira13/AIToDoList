@@ -394,17 +394,26 @@ function renderDangerGauge() {
   );
 
   // アバターのHTML生成（写真のみ大きく表示）
-  const avatarsHtml = staffList.length > 0
-    ? staffList.map(({ staff, count }) => {
-        const isDanger = count >= 3;
-        return `
-          <div class="danger-avatar-item ${isDanger ? 'danger-avatar-item--critical' : ''}">
+  const avatarsHtml =
+    staffList.length > 0
+      ? staffList
+          .map(({ staff, count }) => {
+            const isDanger = count >= 3;
+            return `
+          <div class="danger-avatar-item ${
+            isDanger ? "danger-avatar-item--critical" : ""
+          }">
             ${renderAvatar(staff, 1)}
-            ${isDanger ? '<span class="danger-avatar-item__badge">🔥</span>' : ''}
+            ${
+              isDanger
+                ? '<span class="danger-avatar-item__badge">🔥</span>'
+                : ""
+            }
           </div>
         `;
-      }).join("")
-    : '<p class="danger-gauge__empty">重要かつ緊急のタスクはありません</p>';
+          })
+          .join("")
+      : '<p class="danger-gauge__empty">重要かつ緊急のタスクはありません</p>';
 
   elements.dangerGauge.innerHTML = `
     <div class="danger-gauge">
@@ -457,9 +466,10 @@ function renderDangerStaffList() {
     const titleElement = dangerSection.querySelector(".danger-section__title");
     if (titleElement) {
       const existingWarning = titleElement.querySelector(".danger-warning");
-      const currentWarningText = criticalStaff.length > 0
-        ? `${criticalStaff.join("、")}さんが炎上しそうです`
-        : "";
+      const currentWarningText =
+        criticalStaff.length > 0
+          ? `${criticalStaff.join("、")}さんが炎上しそうです`
+          : "";
 
       // 既存の警告文のテキストと比較して、変更がある場合のみ更新
       if (existingWarning) {
@@ -577,7 +587,7 @@ function renderDangerTaskList() {
   const dangerTasks = state.tasks.filter(
     (task) => task.quadrant === 1 && task.status !== "完了"
   );
-  
+
   // DocumentFragmentを使用して一度に追加することでレイアウトのちらつきを防ぐ
   const fragment = document.createDocumentFragment();
 
@@ -710,17 +720,26 @@ function renderIdleAvatars() {
   );
 
   // アバターのHTML生成（写真のみ大きく表示）
-  const avatarsHtml = staffList.length > 0
-    ? staffList.map(({ staff, count }) => {
-        const isVeryIdle = count >= 3;
-        return `
-          <div class="idle-avatar-item ${isVeryIdle ? 'idle-avatar-item--relaxed' : ''}">
+  const avatarsHtml =
+    staffList.length > 0
+      ? staffList
+          .map(({ staff, count }) => {
+            const isVeryIdle = count >= 3;
+            return `
+          <div class="idle-avatar-item ${
+            isVeryIdle ? "idle-avatar-item--relaxed" : ""
+          }">
             ${renderAvatar(staff, 4)}
-            ${isVeryIdle ? '<span class="idle-avatar-item__badge">☕</span>' : ''}
+            ${
+              isVeryIdle
+                ? '<span class="idle-avatar-item__badge">☕</span>'
+                : ""
+            }
           </div>
         `;
-      }).join("")
-    : '<p class="idle-avatars__empty">暇な人はいません（素晴らしい！）</p>';
+          })
+          .join("")
+      : '<p class="idle-avatars__empty">暇な人はいません（素晴らしい！）</p>';
 
   elements.idleAvatars.innerHTML = `
     <div class="idle-avatars">
@@ -736,6 +755,9 @@ function renderIdleAvatars() {
  */
 function renderIdleStaffList() {
   if (!elements.idleStaffList) return;
+
+  // 前回のレンダリング結果をクリアして重複表示を防ぐ
+  elements.idleStaffList.innerHTML = "";
 
   const fragment = document.createDocumentFragment();
 
@@ -769,7 +791,7 @@ function renderIdleStaffList() {
   if (staffWithIdle.length === 0) {
     const empty = document.createElement("p");
     empty.className = "idle-staff-list__empty";
-    empty.textContent = "第4象限のタスクを持つスタッフはいません";
+    empty.textContent = "重要でも緊急でもないタスクを持つスタッフはいません";
     elements.idleStaffList.appendChild(empty);
     return;
   }
@@ -778,7 +800,9 @@ function renderIdleStaffList() {
     const isVeryIdle = count >= 3;
 
     const card = document.createElement("article");
-    card.className = `idle-staff-card ${isVeryIdle ? "idle-staff-card--relaxed" : ""}`;
+    card.className = `idle-staff-card ${
+      isVeryIdle ? "idle-staff-card--relaxed" : ""
+    }`;
     card.innerHTML = `
       <div class="idle-staff-card__header">
         <div class="idle-staff-card__info">
@@ -788,11 +812,17 @@ function renderIdleStaffList() {
             <p class="idle-staff-card__dept">${staff.department || ""}</p>
           </div>
         </div>
-        <div class="idle-staff-card__count ${isVeryIdle ? "idle-staff-card__count--relaxed" : ""}">
+        <div class="idle-staff-card__count ${
+          isVeryIdle ? "idle-staff-card__count--relaxed" : ""
+        }">
           ${count}件
         </div>
       </div>
-      ${isVeryIdle ? '<div class="idle-staff-card__message">☕ のんびりモード</div>' : ""}
+      ${
+        isVeryIdle
+          ? '<div class="idle-staff-card__message">☕ のんびりモード</div>'
+          : ""
+      }
       ${
         tasks.length > 0
           ? `
@@ -829,8 +859,6 @@ function renderIdleStaffList() {
 
     fragment.appendChild(card);
   });
-
-  elements.idleStaffList.innerHTML = "";
   elements.idleStaffList.appendChild(fragment);
 }
 
