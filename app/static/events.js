@@ -33,6 +33,7 @@ import {
   renderStaff,
   renderPreview,
   renderDangerList,
+  renderIdleList,
   renderCompleted,
 } from "./render.js";
 
@@ -425,6 +426,8 @@ export function switchTab(tabName) {
     renderPreview();
   } else if (tabName === "danger") {
     renderDangerList();
+  } else if (tabName === "idle") {
+    renderIdleList();
   } else if (tabName === "members") {
     renderStaff();
   } else if (tabName === "completed") {
@@ -452,6 +455,14 @@ function updateAllViews() {
       ?.classList.contains("tab-panel--active")
   ) {
     renderDangerList();
+  }
+  // 暇人リストが表示されている場合は更新
+  if (
+    document
+      .getElementById("idleTab")
+      ?.classList.contains("tab-panel--active")
+  ) {
+    renderIdleList();
   }
   // 完了タブが表示されている場合は更新
   if (

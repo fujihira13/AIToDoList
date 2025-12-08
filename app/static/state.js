@@ -130,6 +130,10 @@ export const elements = {
   dangerGauge: document.getElementById("dangerGauge"),
   dangerStaffList: document.getElementById("dangerStaffList"),
   dangerList: document.getElementById("dangerList"),
+  // 暇人リスト用
+  idleAvatars: document.getElementById("idleAvatars"),
+  idleStaffList: document.getElementById("idleStaffList"),
+  idleList: document.getElementById("idleList"),
   completedList: document.getElementById("completedList"),
   completedSortOrder: document.getElementById("completedSortOrder"),
   staffSortOrder: document.getElementById("staffSortOrder"),

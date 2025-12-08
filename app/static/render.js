@@ -661,6 +661,257 @@ function buildDangerTaskCard(task) {
 }
 
 /**
+ * 暇人リストをレンダリングします
+ */
+export function renderIdleList() {
+  // レンダリング中はコンテナを非表示にしてレイアウトのちらつきを防ぐ
+  const idleContainer = document.querySelector(".idle-container");
+  if (idleContainer) {
+    idleContainer.style.visibility = "hidden";
+  }
+
+  renderIdleAvatars();
+  renderIdleStaffList();
+  renderIdleTaskList();
+
+  // レンダリング完了後に表示を復元
+  requestAnimationFrame(() => {
+    if (idleContainer) {
+      idleContainer.style.visibility = "visible";
+    }
+  });
+}
+
+/**
+ * 暇人アバターを表示します（スタッフのアバターを大きく表示）
+ */
+function renderIdleAvatars() {
+  if (!elements.idleAvatars) return;
+
+  const idleTasks = state.tasks.filter(
+    (task) => task.quadrant === 4 && task.status !== "完了"
+  );
+
+  // スタッフごとにタスク数を集計
+  const staffMap = new Map();
+  idleTasks.forEach((task) => {
+    const owner = findStaff(task.owner_id);
+    if (owner) {
+      if (!staffMap.has(owner.id)) {
+        staffMap.set(owner.id, { staff: owner, count: 0 });
+      }
+      staffMap.get(owner.id).count++;
+    }
+  });
+
+  // タスク数が多い順にソート
+  const staffList = Array.from(staffMap.values()).sort(
+    (a, b) => b.count - a.count
+  );
+
+  // アバターのHTML生成（写真のみ大きく表示）
+  const avatarsHtml = staffList.length > 0
+    ? staffList.map(({ staff, count }) => {
+        const isVeryIdle = count >= 3;
+        return `
+          <div class="idle-avatar-item ${isVeryIdle ? 'idle-avatar-item--relaxed' : ''}">
+            ${renderAvatar(staff, 4)}
+            ${isVeryIdle ? '<span class="idle-avatar-item__badge">☕</span>' : ''}
+          </div>
+        `;
+      }).join("")
+    : '<p class="idle-avatars__empty">暇な人はいません（素晴らしい！）</p>';
+
+  elements.idleAvatars.innerHTML = `
+    <div class="idle-avatars">
+      <div class="idle-avatar-grid">
+        ${avatarsHtml}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * 暇人スタッフリストを表示します
+ */
+function renderIdleStaffList() {
+  if (!elements.idleStaffList) return;
+
+  const fragment = document.createDocumentFragment();
+
+  // 各スタッフの第4象限タスク数を集計（完了タスクを除外）
+  const staffIdleMap = new Map();
+  const idleTasks = state.tasks.filter(
+    (task) => task.quadrant === 4 && task.status !== "完了"
+  );
+
+  idleTasks.forEach((task) => {
+    const owner = findStaff(task.owner_id);
+    if (owner) {
+      if (!staffIdleMap.has(owner.id)) {
+        staffIdleMap.set(owner.id, {
+          staff: owner,
+          count: 0,
+          tasks: [],
+        });
+      }
+      const entry = staffIdleMap.get(owner.id);
+      entry.count++;
+      entry.tasks.push(task);
+    }
+  });
+
+  // スタッフリストを配列に変換（第4象限タスク数が多い順）
+  const staffWithIdle = Array.from(staffIdleMap.values()).sort(
+    (a, b) => b.count - a.count
+  );
+
+  if (staffWithIdle.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "idle-staff-list__empty";
+    empty.textContent = "第4象限のタスクを持つスタッフはいません";
+    elements.idleStaffList.appendChild(empty);
+    return;
+  }
+
+  staffWithIdle.forEach(({ staff, count, tasks }) => {
+    const isVeryIdle = count >= 3;
+
+    const card = document.createElement("article");
+    card.className = `idle-staff-card ${isVeryIdle ? "idle-staff-card--relaxed" : ""}`;
+    card.innerHTML = `
+      <div class="idle-staff-card__header">
+        <div class="idle-staff-card__info">
+          ${renderAvatar(staff, 4)}
+          <div class="idle-staff-card__details">
+            <h3 class="idle-staff-card__name">${staff.name}</h3>
+            <p class="idle-staff-card__dept">${staff.department || ""}</p>
+          </div>
+        </div>
+        <div class="idle-staff-card__count ${isVeryIdle ? "idle-staff-card__count--relaxed" : ""}">
+          ${count}件
+        </div>
+      </div>
+      ${isVeryIdle ? '<div class="idle-staff-card__message">☕ のんびりモード</div>' : ""}
+      ${
+        tasks.length > 0
+          ? `
+        <div class="idle-staff-card__tasks">
+          ${tasks
+            .map(
+              (task) => `
+            <div class="idle-staff-card__task-item" data-task-id="${task.id}">
+              <span class="idle-staff-card__task-title">${task.title}</span>
+              <span class="idle-staff-card__task-status badge ${
+                state.statusColors[task.status] || "badge--todo"
+              }">${task.status || ""}</span>
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+      `
+          : ""
+      }
+    `;
+
+    // タスクアイテムにクリックイベントを追加
+    card.querySelectorAll(".idle-staff-card__task-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const taskId = Number(item.dataset.taskId);
+        if (taskId) {
+          const event = new CustomEvent("openTaskForm", { detail: { taskId } });
+          document.dispatchEvent(event);
+        }
+      });
+    });
+
+    fragment.appendChild(card);
+  });
+
+  elements.idleStaffList.innerHTML = "";
+  elements.idleStaffList.appendChild(fragment);
+}
+
+/**
+ * 暇人タスクリストを表示します
+ */
+function renderIdleTaskList() {
+  if (!elements.idleList) return;
+
+  const idleTasks = state.tasks.filter(
+    (task) => task.quadrant === 4 && task.status !== "完了"
+  );
+
+  const fragment = document.createDocumentFragment();
+
+  if (idleTasks.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "idle-list__empty";
+    empty.textContent = "重要でも緊急でもないタスクはありません";
+    fragment.appendChild(empty);
+  } else {
+    sortTasks(idleTasks).forEach((task) => {
+      const card = buildIdleTaskCard(task);
+      fragment.appendChild(card);
+    });
+  }
+
+  elements.idleList.innerHTML = "";
+  elements.idleList.appendChild(fragment);
+}
+
+/**
+ * 暇人タスクカードを構築します
+ */
+function buildIdleTaskCard(task) {
+  const card = document.createElement("article");
+  card.className = "idle-task-card";
+  card.dataset.taskId = String(task.id);
+  card.addEventListener("click", () => {
+    const event = new CustomEvent("openTaskForm", {
+      detail: { taskId: task.id },
+    });
+    document.dispatchEvent(event);
+  });
+
+  const owner = findStaff(task.owner_id);
+  const statusClass = state.statusColors[task.status] || "badge--todo";
+  const priorityClass = priorityClassMap[task.priority] || "low";
+
+  card.innerHTML = `
+    <header class="idle-task-card__header">
+      <span class="idle-task-card__priority idle-task-card__priority--${priorityClass}">
+        ${task.priority || ""}
+      </span>
+      <span class="badge ${statusClass}">${task.status || ""}</span>
+    </header>
+    <h3 class="idle-task-card__title">${task.title}</h3>
+    ${
+      task.description
+        ? `<p class="idle-task-card__description">${task.description}</p>`
+        : ""
+    }
+    <dl class="idle-task-card__meta">
+      <div>
+        <dt>担当者</dt>
+        <dd>
+          ${renderAvatar(owner, 4)}
+          ${owner ? owner.name : "-"}
+          ${owner && owner.department ? `(${owner.department})` : ""}
+        </dd>
+      </div>
+      <div>
+        <dt>期限</dt>
+        <dd>${formatDate(task.due_date)}</dd>
+      </div>
+    </dl>
+  `;
+  return card;
+}
+
+/**
  * 完了タスクをレンダリングします
  */
 export function renderCompleted() {

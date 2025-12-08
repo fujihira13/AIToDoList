@@ -34,6 +34,9 @@
         <button type="button" class="tab-btn" data-tab="danger">
           デンジャーリスト
         </button>
+        <button type="button" class="tab-btn" data-tab="idle">
+          暇人リスト
+        </button>
         <button type="button" class="tab-btn" data-tab="members">
           メンバー
         </button>
@@ -64,6 +67,19 @@
             <section class="danger-section">
               <h2 class="danger-section__title">重要かつ緊急のタスク一覧</h2>
               <div class="danger-list" id="dangerList"></div>
+            </section>
+          </div>
+        </div>
+        <div class="tab-panel" id="idleTab">
+          <div class="idle-container">
+            <div class="idle-avatar-container" id="idleAvatars"></div>
+            <section class="idle-section">
+              <h2 class="idle-section__title">暇そうな人たち</h2>
+              <div class="idle-staff-list" id="idleStaffList"></div>
+            </section>
+            <section class="idle-section">
+              <h2 class="idle-section__title">重要でも緊急でもないタスク一覧</h2>
+              <div class="idle-list" id="idleList"></div>
             </section>
           </div>
         </div>
