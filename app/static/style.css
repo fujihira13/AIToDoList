@@ -246,6 +246,40 @@ body {
   font-size: 0.8rem;
 }
 
+/* スタッフフォーム内のアバタープレビュー */
+.staff-avatar-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.avatar--preview {
+  width: 80px;
+  height: 80px;
+  font-size: 2rem;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-preview-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.avatar-preview-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 1rem;
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  text-align: center;
+}
+
 .staff-panel {
   background: #fff;
   border-radius: 20px;

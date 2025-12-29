@@ -316,6 +316,9 @@ export function openStaffForm(staffId = null) {
   setEditingStaffId(staffId);
   resetStaffFormStatus();
 
+  // アバタープレビュー要素を取得
+  const avatarPreview = document.getElementById("staffAvatarPreview");
+
   if (staffId) {
     const staff = state.staff.find((s) => s.id === staffId);
     if (!staff) return;
@@ -326,12 +329,27 @@ export function openStaffForm(staffId = null) {
     elements.staffForm.staff_name.value = staff.name || "";
     elements.staffForm.staff_department.value = staff.department || "";
     elements.staffForm.staff_photo.value = "";
+
+    // 既存のアバター画像を表示
+    if (avatarPreview && staff.photo) {
+      avatarPreview.innerHTML = `
+        <img src="/static/avatars/${staff.photo}" alt="${staff.name}のアバター" class="avatar avatar--preview" />
+        <p class="avatar-preview-label">現在のアバター</p>
+      `;
+    } else if (avatarPreview) {
+      avatarPreview.innerHTML = `<p class="avatar-preview-empty">アバター未設定</p>`;
+    }
   } else {
     elements.staffFormTitle.textContent = "メンバーを追加";
     elements.submitStaffBtn.textContent = "追加";
     elements.deleteStaffBtn.style.display = "none";
     elements.staffForm.reset();
     setEditingStaffId(null);
+
+    // 新規追加時はプレビューをクリア
+    if (avatarPreview) {
+      avatarPreview.innerHTML = "";
+    }
   }
 
   if (typeof elements.staffDialog?.showModal === "function") {
