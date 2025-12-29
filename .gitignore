@@ -9,3 +9,6 @@ tmp/
 tmp_work/
 *.log
 
+# 生成されたアバター画像（リポジトリが重くなるため除外）
+app/static/avatars/
+app/data/*
